@@ -6,7 +6,18 @@
 // - Memory size (based on address bits)
 // - Channels (parameter)
 // - Name
+class Memory;
+    typedef bit [ADDR_BITS-1:0] addr_t;
+    typedef bit [DATA_BITS-1:0] data_t;
 
+    // Parameters
+    int unsigned ADDR_BITS;
+    int unsigned DATA_BITS;
+    int unsigned CHANNELS;
+    string NAME;
+
+    data_t mem[];
+       
 // DUT Signals
 // Memory read signals
 // - Read valid
@@ -19,6 +30,18 @@
 // - Write ready
 // - Write address
 // - Write data
+
+    // Constructor
+    function new(int unsigned addr_bits, int unsigned data_bits, int unsigned channels, string name);
+        ADDR_BITS = addr_bits;
+        DATA_BITS = data_bits;
+        CHANNELS = channels;
+        NAME = name;
+
+        // Calculate memory size based on address bits
+        int unsigned mem_size = 1 << ADDR_BITS;
+        mem = new[CHANNELS][mem_size];
+    endfunction
 
 // Run function:
 // Parse read valid bits (converts each bit to an integer)
