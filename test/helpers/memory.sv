@@ -13,6 +13,11 @@
 
 // Memory class
 class Memory;
+
+parameter int ADDR_BITS = 8;
+parameter int DATA_BITS = 16;
+parameter int CHANNELS = 1;
+
 string name;
 
 logic [CHANNELS-1:0] mem_read_valid;
