@@ -2,6 +2,13 @@
 * Simulate on current toolchain (QuestaSim) instead of using project toolchain to convert SV code to V code
 * Original used this toolchain in order to employ Python testbenches, but we plan on porting the testbenches to SystemVerilog anyways
 
-**06/04/2025**
+**06/03/2025**
 * Done: as direct of translation as possible with memory.py > memory.sv
 * TODO: port logger.py and format.py, may integrate into test bench instead of making it a separate class/module (?)
+
+**06/03/2025**
+* Removed the interface from memory, setup and test* modules since the current gpu code does not use it (yet ?) since it was originally written for Verilog
+* GPU modules may be refactored in the future to use interfaces since many modules connect via the same signals
+* Added SystemVerilog port for test_matadd
+* Added sources.f file for quick compilation (use ```vlog -lint -source -file sources.f```)
+
