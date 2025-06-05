@@ -1,5 +1,6 @@
 `include "helpers/memory.sv"
 // `include "helpers/setup.sv"
+`timescale 1ns/1ns
 
 module test_matadd;
     localparam DATA_MEM_ADDR_BITS     = 8;
@@ -20,28 +21,25 @@ module test_matadd;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
 
-    // Program Memory interface signals
-    logic program_mem_read_valid;
-    logic [PROGRAM_MEM_ADDR_BITS-1:0] program_mem_read_address;
-    logic program_mem_read_ready;
-    logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data;
-
-    // Data Memory interface signals
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_valid;
-    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_ready;
-    logic [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_valid;
-    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data    [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_ready;
-
-
     // Clock generation
     initial clk = 0;
-    always #5 clk = ~clk;
+    always #25000 clk = ~clk;
 
-    // Instantiate Program Memory
+    // Instantiate memory interfaces
+    mem_if #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) program_mem_if();
+
+    mem_if #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) data_mem_if();
+
+
+    // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
@@ -64,7 +62,7 @@ module test_matadd;
         16'b1111000000000000
     };
 
-    // Instantiate Data Memory
+    // Data Memory
     Memory #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
@@ -96,50 +94,44 @@ module test_matadd;
         .device_control_write_enable(device_control_write_enable),
         .device_control_data(device_control_data),
 
-        .program_mem_read_valid(program_mem_read_valid),
-        .program_mem_read_address(program_mem_read_address),
-        .program_mem_read_ready(program_mem_read_ready),
-        .program_mem_read_data(program_mem_read_data),
+        // Program memory hookup via interface
+        .program_mem_read_valid(program_mem_if.read_valid),
+        .program_mem_read_address(program_mem_if.read_address),
+        .program_mem_read_ready(program_mem_if.read_ready),
+        .program_mem_read_data(program_mem_if.read_data),
 
-        .data_mem_read_valid(data_mem_read_valid),
-        .data_mem_read_address(data_mem_read_address),
-        .data_mem_read_ready(data_mem_read_ready),
-        .data_mem_read_data(data_mem_read_data),
-        .data_mem_write_valid(data_mem_write_valid),
-        .data_mem_write_address(data_mem_write_address),
-        .data_mem_write_data(data_mem_write_data),
-        .data_mem_write_ready(data_mem_write_ready)
+        // Data memory hookup via interface
+        .data_mem_read_valid(data_mem_if.read_valid),
+        .data_mem_read_address(data_mem_if.read_address),
+        .data_mem_read_ready(data_mem_if.read_ready),
+        .data_mem_read_data(data_mem_if.read_data),
+        .data_mem_write_valid(data_mem_if.write_valid),
+        .data_mem_write_address(data_mem_if.write_address),
+        .data_mem_write_data(data_mem_if.write_data),
+        .data_mem_write_ready(data_mem_if.write_ready)
     );
+
+    always @(posedge clk) begin
+ 	$display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
+    	$display("T=%0t | reset=%b start=%b done=%b | ctrl_we=%b ctrl_data=%0d", 
+              $time, reset, start, done, device_control_write_enable, device_control_data);
+    end
 
     initial begin
         cycles = 0;
         // Setup and reset
-        reset = 0;
-        @(posedge clk);
         reset = 1;
+        @(posedge clk);
+        reset = 0;
 
         // // Construct memories
         // program_memory = new("program");
         // data_memory    = new("data");
 
         // Hook interface signals to class instances
-        program_memory = new("program",
-            program_mem_read_valid,
-            program_mem_read_address,
-            program_mem_read_ready,
-            program_mem_read_data
-        );
+        program_memory = new("program", program_mem_if);
 
-        data_memory = new("data",
-            data_mem_read_valid,
-            data_mem_read_address,
-            data_mem_read_ready,
-            data_mem_read_data,
-            data_mem_write_valid,
-            data_mem_write_address,
-            data_mem_write_data,
-            data_mem_write_ready
-        );
+        data_memory = new("data", data_mem_if);
 
         // Load program and data memory
         program_memory.load(prog);
@@ -154,7 +146,7 @@ module test_matadd;
         // Start DUT
         start = 1'b1;
         @(posedge clk);
-        start = 1'b0;
+        // start = 1'b0;
 
         while (done !== 1) begin
             program_memory.run();

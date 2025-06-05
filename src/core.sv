@@ -33,7 +33,7 @@ module core #(
     output logic [THREADS_PER_BLOCK-1:0] data_mem_read_valid,
     output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [THREADS_PER_BLOCK-1:0],
     input logic [THREADS_PER_BLOCK-1:0] data_mem_read_ready,
-    input logic [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [THREADS_PER_BLOCK-1:0],
+    input wire [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [THREADS_PER_BLOCK-1:0],
     output logic [THREADS_PER_BLOCK-1:0] data_mem_write_valid,
     output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [THREADS_PER_BLOCK-1:0],
     output logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data [THREADS_PER_BLOCK-1:0],
