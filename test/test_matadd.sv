@@ -1,5 +1,6 @@
 `include "helpers/memory.sv"
 // `include "helpers/setup.sv"
+`timescale 1ns/1ns
 
 module test_matadd;
     localparam DATA_MEM_ADDR_BITS     = 8;
@@ -25,17 +26,17 @@ module test_matadd;
     always #5 clk = ~clk;
 
     // Instantiate memory interfaces
-    virtual mem_if #(
+    mem_if #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
         .CHANNELS(PROGRAM_MEM_CHANNELS)
-    ) program_mem_if;
+    ) program_mem_if();
 
-    virtual mem_if #(
+    mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
         .CHANNELS(DATA_MEM_CHANNELS)
-    ) data_mem_if;
+    ) data_mem_if();
 
 
     // Program Memory
