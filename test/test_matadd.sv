@@ -122,23 +122,9 @@ module test_matadd;
         // data_memory    = new("data");
 
         // Hook interface signals to class instances
-        program_memory = new("program",
-            program_mem_read_valid,
-            program_mem_read_address,
-            program_mem_read_ready,
-            program_mem_read_data
-        );
+        program_memory = new("program", program_mem_if);
 
-        data_memory = new("data",
-            data_mem_read_valid,
-            data_mem_read_address,
-            data_mem_read_ready,
-            data_mem_read_data,
-            data_mem_write_valid,
-            data_mem_write_address,
-            data_mem_write_data,
-            data_mem_write_ready
-        );
+        data_memory = new("data", data_mem_if);
 
         // Load program and data memory
         program_memory.load(prog);
