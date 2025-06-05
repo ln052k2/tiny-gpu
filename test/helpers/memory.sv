@@ -12,11 +12,9 @@
 // - Write data
 
 // Memory class
-class Memory;
-
-parameter int ADDR_BITS = 8;
-parameter int DATA_BITS = 16;
-parameter int CHANNELS = 1;
+class Memory #(parameter int ADDR_BITS = 8, 
+                parameter int DATA_BITS = 16, 
+                parameter int CHANNELS = 1);
 
 string name;
 

@@ -36,3 +36,8 @@ The variable any_lsu_waiting is declared in the same line it is initialized. To 
 * BEFORE: ```logic any_lsu_waitin = 1'b0;```
 * AFTER: ```logic any lsu_waiting; ... any_lsu_waitin = 1'b0;```
 
+```
+###### test/test_matadd.sv(27):     Memory #(
+** Error (suppressible): test/test_matadd.sv(27): (vlog-13071) Illegal parameter specification for non-parameterized class type 'Memory'.
+```
+Memory class was not declared to be parameterizable, so I moved the parameters to the class header.
