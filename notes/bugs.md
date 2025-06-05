@@ -41,3 +41,5 @@ The variable any_lsu_waiting is declared in the same line it is initialized. To 
 ** Error (suppressible): test/test_matadd.sv(27): (vlog-13071) Illegal parameter specification for non-parameterized class type 'Memory'.
 ```
 Memory class was not declared to be parameterizable, so I moved the parameters to the class header.
+* BEFORE: ```class Memory; parameter int ADDR_BITS = 8; ... endclass```
+* AFTER: ```class Memory #(parameter int ADDDR_BITS = 8)```

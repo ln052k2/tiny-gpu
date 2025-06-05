@@ -2,9 +2,6 @@
 // `include "helpers/setup.sv"
 
 module test_matadd;
-    logic clk = 0;
-    logic reset;
-
     localparam DATA_MEM_ADDR_BITS     = 8;
     localparam DATA_MEM_DATA_BITS     = 8;
     localparam PROGRAM_MEM_ADDR_BITS  = 8;
@@ -13,15 +10,19 @@ module test_matadd;
     localparam PROGRAM_MEM_CHANNELS   = 1;
     localparam CORES                  = 2;
     localparam THREADS                = 8;
-
-    // Clock generation
-    always #5 clk = ~clk;
+    int cycles;
 
     // Control signals for DUT
-    logic start;
-    logic done;
+    logic start, done, reset, clk;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
+
+    logic [DATA_MEM_DATA_BITS-1:0] expected;
+    logic [DATA_MEM_DATA_BITS-1:0] result;
+
+    // Clock generation
+    clk = 0;
+    always #5 clk = ~clk;
 
     // Instantiate Program Memory
     Memory #(
@@ -93,20 +94,15 @@ module test_matadd;
     );
 
     initial begin
+        cycles = 0;
         // Setup and reset
         reset = 0;
-        #15 reset = 1;
+        @(posedge clk);
+        reset = 1;
 
         // Construct memories
         program_memory = new("program");
         data_memory    = new("data");
-
-        // Run setup task (declared in setup.sv)
-        int cycles = 0;
-        // Reset DUT - assert reset
-        reset = 1'b1;
-        @(posedge clk);
-        reset = 1'b0;
 
         // Load program and data memory
         program_memory.load(prog);
@@ -135,8 +131,8 @@ module test_matadd;
 
         // Validate results
         for (int i = 0; i < 8; i++) begin
-            logic [DATA_MEM_DATA_BITS-1:0] expected = data[i] + data[i + 8];
-            logic [DATA_MEM_DATA_BITS-1:0] result   = data_memory.memory[i + 16];
+            expected = data[i] + data[i + 8];
+            result   = data_memory.memory[i + 16];
             if (result !== expected) begin
                 $fatal("Mismatch at index %0d: expected %0d, got %0d", i, expected, result);
             end
