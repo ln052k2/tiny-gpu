@@ -20,3 +20,5 @@ vlog -lint -source -file sources.f
 
 There are two ways to get rid of this error: remove the ```\`default_nettype none``` declaration at the top of every file, or to change all the input reg to just input logic/wires. I decided to go with the latter, since ```\`default_nettype none``` can be useful for detecting typos (by preventing new signals from be implicitly created). We're also aiming to port this from Python/Verilog to SystemVerilog, anyways.
 
+I assumed this error would appear for other files, so I went ahead and changed all the input reg declarations in other files as well once I was able to verify that doing so with alu.sv resolved all errors with that message.
+
