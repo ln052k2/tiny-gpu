@@ -20,28 +20,25 @@ module test_matadd;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
 
-    // Program Memory interface signals
-    logic program_mem_read_valid;
-    logic [PROGRAM_MEM_ADDR_BITS-1:0] program_mem_read_address;
-    logic program_mem_read_ready;
-    logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data;
-
-    // Data Memory interface signals
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_valid;
-    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_ready;
-    logic [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_valid;
-    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data    [DATA_MEM_CHANNELS-1:0];
-    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_ready;
-
-
     // Clock generation
     initial clk = 0;
     always #5 clk = ~clk;
 
-    // Instantiate Program Memory
+    // Instantiate memory interfaces
+    virtual mem_if #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) program_mem_if;
+
+    virtual mem_if #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) data_mem_if;
+
+
+    // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
@@ -64,7 +61,7 @@ module test_matadd;
         16'b1111000000000000
     };
 
-    // Instantiate Data Memory
+    // Data Memory
     Memory #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),

@@ -12,5 +12,4 @@ src/registers.sv
 src/scheduler.sv
 test/helpers/logger.sv
 test/helpers/memory.sv
-test/helpers/setup.sv
 test/test_matadd.sv
