@@ -1,0 +1,16 @@
+src/alu.sv
+src/controller.sv
+src/core.sv
+src/dcr.sv
+src/decoder.sv
+src/dispatch.sv
+src/fetcher.sv
+src/gpu.sv
+src/lsu.sv
+src/pc.sv
+src/registers.sv
+src/scheduler.sv
+test/helpers/logger.sv
+test/helpers/memory.sv
+test/helpers/setup.sv
+test/test_matadd.sv
