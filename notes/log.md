@@ -11,4 +11,4 @@
 * GPU modules may be refactored in the future to use interfaces since many modules connect via the same signals
 * Added SystemVerilog port for test_matadd
 * Added sources.f file for quick compilation (use ```vlog -lint -source -file sources.f```)
-
+* Changed signals that used input reg -> input logic/wires to move from Verilog to SystemVerilog

@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // ARITHMETIC-LOGIC UNIT
@@ -25,7 +25,7 @@ module alu (
         MUL = 2'b10,
         DIV = 2'b11;
 
-    reg [7:0] alu_out_reg;
+    logic [7:0] alu_out_reg;
     assign alu_out = alu_out_reg;
 
     always @(posedge clk) begin 

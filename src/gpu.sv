@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // GPU
@@ -48,29 +48,29 @@ module gpu #(
     wire [7:0] thread_count;
 
     // Compute Core State
-    reg [NUM_CORES-1:0] core_start;
-    reg [NUM_CORES-1:0] core_reset;
-    reg [NUM_CORES-1:0] core_done;
-    reg [7:0] core_block_id [NUM_CORES-1:0];
-    reg [$clog2(THREADS_PER_BLOCK):0] core_thread_count [NUM_CORES-1:0];
+    logic [NUM_CORES-1:0] core_start;
+    logic [NUM_CORES-1:0] core_reset;
+    logic [NUM_CORES-1:0] core_done;
+    logic [7:0] core_block_id [NUM_CORES-1:0];
+    logic [$clog2(THREADS_PER_BLOCK):0] core_thread_count [NUM_CORES-1:0];
 
     // LSU <> Data Memory Controller Channels
     localparam NUM_LSUS = NUM_CORES * THREADS_PER_BLOCK;
-    reg [NUM_LSUS-1:0] lsu_read_valid;
-    reg [DATA_MEM_ADDR_BITS-1:0] lsu_read_address [NUM_LSUS-1:0];
-    reg [NUM_LSUS-1:0] lsu_read_ready;
-    reg [DATA_MEM_DATA_BITS-1:0] lsu_read_data [NUM_LSUS-1:0];
-    reg [NUM_LSUS-1:0] lsu_write_valid;
-    reg [DATA_MEM_ADDR_BITS-1:0] lsu_write_address [NUM_LSUS-1:0];
-    reg [DATA_MEM_DATA_BITS-1:0] lsu_write_data [NUM_LSUS-1:0];
-    reg [NUM_LSUS-1:0] lsu_write_ready;
+    logic [NUM_LSUS-1:0] lsu_read_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] lsu_read_address [NUM_LSUS-1:0];
+    logic [NUM_LSUS-1:0] lsu_read_ready;
+    logic [DATA_MEM_DATA_BITS-1:0] lsu_read_data [NUM_LSUS-1:0];
+    logic [NUM_LSUS-1:0] lsu_write_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] lsu_write_address [NUM_LSUS-1:0];
+    logic [DATA_MEM_DATA_BITS-1:0] lsu_write_data [NUM_LSUS-1:0];
+    logic [NUM_LSUS-1:0] lsu_write_ready;
 
     // Fetcher <> Program Memory Controller Channels
     localparam NUM_FETCHERS = NUM_CORES;
-    reg [NUM_FETCHERS-1:0] fetcher_read_valid;
-    reg [PROGRAM_MEM_ADDR_BITS-1:0] fetcher_read_address [NUM_FETCHERS-1:0];
-    reg [NUM_FETCHERS-1:0] fetcher_read_ready;
-    reg [PROGRAM_MEM_DATA_BITS-1:0] fetcher_read_data [NUM_FETCHERS-1:0];
+    logic [NUM_FETCHERS-1:0] fetcher_read_valid;
+    logic [PROGRAM_MEM_ADDR_BITS-1:0] fetcher_read_address [NUM_FETCHERS-1:0];
+    logic [NUM_FETCHERS-1:0] fetcher_read_ready;
+    logic [PROGRAM_MEM_DATA_BITS-1:0] fetcher_read_data [NUM_FETCHERS-1:0];
     
     // Device Control Register
     dcr dcr_instance (
@@ -156,14 +156,14 @@ module gpu #(
         for (i = 0; i < NUM_CORES; i = i + 1) begin : cores
             // EDA: We create separate signals here to pass to cores because of a requirement
             // by the OpenLane EDA flow (uses Verilog 2005) that prevents slicing the top-level signals
-            reg [THREADS_PER_BLOCK-1:0] core_lsu_read_valid;
-            reg [DATA_MEM_ADDR_BITS-1:0] core_lsu_read_address [THREADS_PER_BLOCK-1:0];
-            reg [THREADS_PER_BLOCK-1:0] core_lsu_read_ready;
-            reg [DATA_MEM_DATA_BITS-1:0] core_lsu_read_data [THREADS_PER_BLOCK-1:0];
-            reg [THREADS_PER_BLOCK-1:0] core_lsu_write_valid;
-            reg [DATA_MEM_ADDR_BITS-1:0] core_lsu_write_address [THREADS_PER_BLOCK-1:0];
-            reg [DATA_MEM_DATA_BITS-1:0] core_lsu_write_data [THREADS_PER_BLOCK-1:0];
-            reg [THREADS_PER_BLOCK-1:0] core_lsu_write_ready;
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_read_valid;
+            logic [DATA_MEM_ADDR_BITS-1:0] core_lsu_read_address [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_read_ready;
+            logic [DATA_MEM_DATA_BITS-1:0] core_lsu_read_data [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_write_valid;
+            logic [DATA_MEM_ADDR_BITS-1:0] core_lsu_write_address [THREADS_PER_BLOCK-1:0];
+            logic [DATA_MEM_DATA_BITS-1:0] core_lsu_write_data [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_write_ready;
 
             // Pass through signals between LSUs and data memory controller
             genvar j;
