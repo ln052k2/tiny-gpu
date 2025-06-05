@@ -23,7 +23,7 @@ module test_matadd;
 
     // Clock generation
     initial clk = 0;
-    always #5 clk = ~clk;
+    always #25000 clk = ~clk;
 
     // Instantiate memory interfaces
     mem_if #(
@@ -111,12 +111,18 @@ module test_matadd;
         .data_mem_write_ready(data_mem_if.write_ready)
     );
 
+    always @(posedge clk) begin
+ 	$display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
+    	$display("T=%0t | reset=%b start=%b done=%b | ctrl_we=%b ctrl_data=%0d", 
+              $time, reset, start, done, device_control_write_enable, device_control_data);
+    end
+
     initial begin
         cycles = 0;
         // Setup and reset
-        reset = 0;
-        @(posedge clk);
         reset = 1;
+        @(posedge clk);
+        reset = 0;
 
         // // Construct memories
         // program_memory = new("program");
@@ -140,7 +146,7 @@ module test_matadd;
         // Start DUT
         start = 1'b1;
         @(posedge clk);
-        start = 1'b0;
+        // start = 1'b0;
 
         while (done !== 1) begin
             program_memory.run();

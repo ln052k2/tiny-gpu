@@ -32,24 +32,28 @@ class Memory #(
     // Simulates one clock cycle of memory activity
     task run();
         for (int i = 0; i < CHANNELS; i++) begin
-            // READ handling
-            if (mem.read_valid[i]) begin
+            // READ handling (pulse read_ready)
+            if (mem.read_valid[i] && !mem.read_ready[i]) begin
                 mem.read_data[i]  = memory[mem.read_address[i]];
                 mem.read_ready[i] = 1;
+                $display("[%s] Read ch%0d addr=%0d -> data=%0d",
+                        name, i, mem.read_address[i], mem.read_data[i]);
             end else begin
-                mem.read_data[i]  = '0;
-                mem.read_ready[i] = 0;
+                mem.read_ready[i] = 0; // Deassert after one cycle
             end
 
-            // WRITE handling
-            if (mem.write_valid[i]) begin
+            // WRITE handling (pulse write_ready)
+            if (mem.write_valid[i] && !mem.write_ready[i]) begin
                 memory[mem.write_address[i]] = mem.write_data[i];
                 mem.write_ready[i] = 1;
+                $display("[%s] Write ch%0d addr=%0d <- data=%0d",
+                        name, i, mem.write_address[i], mem.write_data[i]);
             end else begin
-                mem.write_ready[i] = 0;
+                mem.write_ready[i] = 0; // Deassert after one cycle
             end
         end
     endtask
+
 
     // Manual memory write (bypasses interface)
     task write(addr_t address, data_t data);
@@ -72,3 +76,4 @@ class Memory #(
         $display("========================\n");
     endtask
 endclass
+
