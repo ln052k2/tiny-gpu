@@ -48,16 +48,16 @@ module controller #(
 
     always @(posedge clk) begin
         if (reset) begin 
-            mem_read_valid <= 0;
+            mem_read_valid <= 1'b0;
             mem_read_address <= '{default: '0};
 
-            mem_write_valid <= 0;
+            mem_write_valid <= 1'b0;
             mem_write_address <= '{default: '0};
             mem_write_data <= '{default: '0};
 
-            consumer_read_ready <= 0;
+            consumer_read_ready <= 1'b0;
             consumer_read_data <= '{default: '0};
-            consumer_write_ready <= 0;
+            consumer_write_ready <= 1'b0;
 
             current_consumer <= '{default: '0};
             controller_state <= '{default: '0};

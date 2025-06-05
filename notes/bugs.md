@@ -18,4 +18,11 @@ I assumed this error would appear for other files, so I went ahead and changed a
 ** Error (suppressible): src/controller.sv(52): (vlog-2997) Cannot assign a packed type 'bit signed[31:0]' to an unpacked type 'reg[ADDR_BITS-1:0] $[NUM_CHANNELS-1:0]'.
 ```
 
-Multiple of these errors for the reset branch in the controller.sv module assigning 0s to arrays of arrays.
+Multiple of these errors for the reset branch in the controller.sv module assigning 0s to arrays of arrays. Use aggregate assignment to initialize these unpacked arrays.
+* BEFORE: ```mem_read_address <= 0;```
+* AFTER: ```mem_read_address <= '{default: '0};```
+
+```
+###### src/core.sv(116):     ) scheduler_instance (
+** Error: (vlog-13069) src/core.sv(116): near ")": syntax error, unexpected ')', expecting '.'.
+```
