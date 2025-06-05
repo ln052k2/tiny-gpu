@@ -1,9 +1,9 @@
 `include "helpers/memory.sv"
-`include "helpers/setup.sv"
+// `include "helpers/setup.sv"
 
 module test_matadd;
     logic clk = 0;
-    logic resetN;
+    logic reset;
 
     localparam DATA_MEM_ADDR_BITS     = 8;
     localparam DATA_MEM_DATA_BITS     = 8;
@@ -70,7 +70,7 @@ module test_matadd;
         .THREADS_PER_BLOCK(THREADS)
     ) dut (
         .clk(clk),
-        .reset(resetN),
+        .reset(reset),
         .start(start),
         .done(done),
 
@@ -94,24 +94,34 @@ module test_matadd;
 
     initial begin
         // Setup and reset
-        resetN = 0;
-        #15 resetN = 1;
+        reset = 0;
+        #15 reset = 1;
 
         // Construct memories
         program_memory = new("program");
         data_memory    = new("data");
 
         // Run setup task (declared in setup.sv)
-        setup(
-            .dut(dut),
-            .program_mem(program_memory),
-            .pmem(prog),
-            .data_mem(data_memory),
-            .dmem(data),
-            .threads(THREADS)
-        );
-
         int cycles = 0;
+        // Reset DUT - assert reset
+        reset = 1'b1;
+        @(posedge clk);
+        reset = 1'b0;
+
+        // Load program and data memory
+        program_memory.load(prog);
+        data_memory.load(data);
+
+        // Write number of threads to register via device control
+        device_control_data = THREADS;
+        device_control_write_enable = 1'b1;
+        @(posedge clk);
+        device_control_write_enable = 1'b0;
+
+        // Start DUT
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
 
         while (done !== 1) begin
             program_memory.run();
