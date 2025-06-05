@@ -37,6 +37,8 @@ module scheduler #(
     output logic [2:0] core_state,
     output logic done
 );
+    logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
+    
     localparam IDLE = 3'b000, // Waiting to start
         FETCH = 3'b001,       // Fetch instructions from program memory
         DECODE = 3'b010,      // Decode instructions into control signals
@@ -76,7 +78,7 @@ module scheduler #(
                 end
                 WAIT: begin
                     // Wait for all LSUs to finish their request before continuing
-                    logic any_lsu_waiting = 1'b0;
+                    any_lsu_waiting = 1'b0;
                     for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
                         // Make sure no lsu_state = REQUESTING or WAITING
                         if (lsu_state[i] == 2'b01 || lsu_state[i] == 2'b10) begin

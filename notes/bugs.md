@@ -28,3 +28,11 @@ Multiple of these errors for the reset branch in the controller.sv module assign
 ```
 There are a couple more of these errors in various files that have to do with an I/O or parameter list ending with a comma. I went through each of the module declarations and deleted trailing commas, which resolved 5 of these errors.
 
+```
+** Error (suppressible): src/scheduler.sv(79): (vlog-2244) Variable 'any_lsu_waiting' is implicitly static. You must either explicitly declare it as static or automatic
+or remove the initialization in the declaration of variable.
+```
+The variable any_lsu_waiting is declared in the same line it is initialized. To fix this, I declared it at the beginning of the module
+* BEFORE: ```logic any_lsu_waitin = 1'b0;```
+* AFTER: ```logic any lsu_waiting; ... any_lsu_waitin = 1'b0;```
+
