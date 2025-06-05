@@ -17,19 +17,19 @@ module controller #(
 
     // Consumer Interface (Fetchers / LSUs)
     input logic [NUM_CONSUMERS-1:0] consumer_read_valid,
-    input logic [ADDR_BITS-1:0] consumer_read_address [NUM_CONSUMERS-1:0],
+    input wire [ADDR_BITS-1:0] consumer_read_address [NUM_CONSUMERS-1:0],
     output logic [NUM_CONSUMERS-1:0] consumer_read_ready,
     output logic [DATA_BITS-1:0] consumer_read_data [NUM_CONSUMERS-1:0],
     input logic [NUM_CONSUMERS-1:0] consumer_write_valid,
-    input logic [ADDR_BITS-1:0] consumer_write_address [NUM_CONSUMERS-1:0],
-    input logic [DATA_BITS-1:0] consumer_write_data [NUM_CONSUMERS-1:0],
+    input wire [ADDR_BITS-1:0] consumer_write_address [NUM_CONSUMERS-1:0],
+    input wire [DATA_BITS-1:0] consumer_write_data [NUM_CONSUMERS-1:0],
     output logic [NUM_CONSUMERS-1:0] consumer_write_ready,
 
     // Memory Interface (Data / Program)
     output logic [NUM_CHANNELS-1:0] mem_read_valid,
     output logic [ADDR_BITS-1:0] mem_read_address [NUM_CHANNELS-1:0],
     input logic [NUM_CHANNELS-1:0] mem_read_ready,
-    input logic [DATA_BITS-1:0] mem_read_data [NUM_CHANNELS-1:0],
+    input wire [DATA_BITS-1:0] mem_read_data [NUM_CHANNELS-1:0],
     output logic [NUM_CHANNELS-1:0] mem_write_valid,
     output logic [ADDR_BITS-1:0] mem_write_address [NUM_CHANNELS-1:0],
     output logic [DATA_BITS-1:0] mem_write_data [NUM_CHANNELS-1:0],
@@ -62,7 +62,7 @@ module controller #(
             current_consumer <= '{default: '0};
             controller_state <= '{default: '0};
 
-            channel_serving_consumer = '{default: '0};
+            channel_serving_consumer <= '{default: '0};
         end else begin 
             // For each channel, we handle processing concurrently
             for (int i = 0; i < NUM_CHANNELS; i = i + 1) begin 

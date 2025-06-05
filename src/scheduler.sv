@@ -27,11 +27,11 @@ module scheduler #(
 
     // Memory Access State
     input logic [2:0] fetcher_state,
-    input logic [1:0] lsu_state [THREADS_PER_BLOCK-1:0],
+    input wire [1:0] lsu_state [THREADS_PER_BLOCK-1:0],
 
     // Current & Next PC
     output logic [7:0] current_pc,
-    input logic [7:0] next_pc [THREADS_PER_BLOCK-1:0],
+    input wire [7:0] next_pc [THREADS_PER_BLOCK-1:0],
 
     // Execution State
     output logic [2:0] core_state,

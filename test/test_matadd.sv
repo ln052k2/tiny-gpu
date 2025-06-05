@@ -21,7 +21,7 @@ module test_matadd;
     logic [DATA_MEM_DATA_BITS-1:0] result;
 
     // Clock generation
-    clk = 0;
+    initial clk = 0;
     always #5 clk = ~clk;
 
     // Instantiate Program Memory
