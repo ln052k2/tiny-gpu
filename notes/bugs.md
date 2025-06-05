@@ -43,3 +43,8 @@ The variable any_lsu_waiting is declared in the same line it is initialized. To 
 Memory class was not declared to be parameterizable, so I moved the parameters to the class header.
 * BEFORE: ```class Memory; parameter int ADDR_BITS = 8; ... endclass```
 * AFTER: ```class Memory #(parameter int ADDDR_BITS = 8)```
+
+```
+###### test/test_matadd.sv(93):         .data_mem_write_ready(data_memory.mem_write_ready)
+# ** Error: test/test_matadd.sv(93): (vopt-2898) A dynamic or an automatic variable reference (data_memory) is not allowed.
+```

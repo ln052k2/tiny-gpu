@@ -12,13 +12,30 @@ module test_matadd;
     localparam THREADS                = 8;
     int cycles;
 
-    // Control signals for DUT
+    // Signals for expected results comparison
+    logic [DATA_MEM_DATA_BITS-1:0] expected, result;
+
+    // Signals for DUT
     logic start, done, reset, clk;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
 
-    logic [DATA_MEM_DATA_BITS-1:0] expected;
-    logic [DATA_MEM_DATA_BITS-1:0] result;
+    // Program Memory interface signals
+    logic program_mem_read_valid;
+    logic [PROGRAM_MEM_ADDR_BITS-1:0] program_mem_read_address;
+    logic program_mem_read_ready;
+    logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data;
+
+    // Data Memory interface signals
+    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [DATA_MEM_CHANNELS-1:0];
+    logic [DATA_MEM_CHANNELS-1:0] data_mem_read_ready;
+    logic [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [DATA_MEM_CHANNELS-1:0];
+    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [DATA_MEM_CHANNELS-1:0];
+    logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data    [DATA_MEM_CHANNELS-1:0];
+    logic [DATA_MEM_CHANNELS-1:0] data_mem_write_ready;
+
 
     // Clock generation
     initial clk = 0;
@@ -59,6 +76,7 @@ module test_matadd;
         0, 1, 2, 3, 4, 5, 6, 7     // Matrix B
     };
 
+    
     // Instantiate DUT
     gpu #(
         .DATA_MEM_ADDR_BITS(DATA_MEM_ADDR_BITS),
@@ -78,19 +96,19 @@ module test_matadd;
         .device_control_write_enable(device_control_write_enable),
         .device_control_data(device_control_data),
 
-        .program_mem_read_valid(program_memory.mem_read_valid),
-        .program_mem_read_address(program_memory.mem_read_address),
-        .program_mem_read_ready(program_memory.mem_read_ready),
-        .program_mem_read_data(program_memory.mem_read_data),
+        .program_mem_read_valid(program_mem_read_valid),
+        .program_mem_read_address(program_mem_read_address),
+        .program_mem_read_ready(program_mem_read_ready),
+        .program_mem_read_data(program_mem_read_data),
 
-        .data_mem_read_valid(data_memory.mem_read_valid),
-        .data_mem_read_address(data_memory.mem_read_address),
-        .data_mem_read_ready(data_memory.mem_read_ready),
-        .data_mem_read_data(data_memory.mem_read_data),
-        .data_mem_write_valid(data_memory.mem_write_valid),
-        .data_mem_write_address(data_memory.mem_write_address),
-        .data_mem_write_data(data_memory.mem_write_data),
-        .data_mem_write_ready(data_memory.mem_write_ready)
+        .data_mem_read_valid(data_mem_read_valid),
+        .data_mem_read_address(data_mem_read_address),
+        .data_mem_read_ready(data_mem_read_ready),
+        .data_mem_read_data(data_mem_read_data),
+        .data_mem_write_valid(data_mem_write_valid),
+        .data_mem_write_address(data_mem_write_address),
+        .data_mem_write_data(data_mem_write_data),
+        .data_mem_write_ready(data_mem_write_ready)
     );
 
     initial begin
@@ -100,9 +118,28 @@ module test_matadd;
         @(posedge clk);
         reset = 1;
 
-        // Construct memories
-        program_memory = new("program");
-        data_memory    = new("data");
+        // // Construct memories
+        // program_memory = new("program");
+        // data_memory    = new("data");
+
+        // Hook interface signals to class instances
+        program_memory = new("program",
+            program_mem_read_valid,
+            program_mem_read_address,
+            program_mem_read_ready,
+            program_mem_read_data
+        );
+
+        data_memory = new("data",
+            data_mem_read_valid,
+            data_mem_read_address,
+            data_mem_read_ready,
+            data_mem_read_data,
+            data_mem_write_valid,
+            data_mem_write_address,
+            data_mem_write_data,
+            data_mem_write_ready
+        );
 
         // Load program and data memory
         program_memory.load(prog);
