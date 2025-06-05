@@ -26,3 +26,5 @@ Multiple of these errors for the reset branch in the controller.sv module assign
 ###### src/core.sv(116):     ) scheduler_instance (
 ** Error: (vlog-13069) src/core.sv(116): near ")": syntax error, unexpected ')', expecting '.'.
 ```
+There are a couple more of these errors in various files that have to do with an I/O or parameter list ending with a comma. I went through each of the module declarations and deleted trailing commas, which resolved 5 of these errors.
+
