@@ -116,12 +116,6 @@ module test_matmul;
         .program_mem_read_address(program_mem_if.read_address),
         .program_mem_read_ready(program_mem_if.read_ready),
         .program_mem_read_data(program_mem_if.read_data),
-        // NOTE: program memory is still read-only in this test
-        .program_mem_write_valid(program_mem_if.write_valid),
-        .program_mem_write_address(program_mem_if.write_address),
-        .program_mem_write_data(program_mem_if.write_data),
-        .program_mem_write_ready(program_mem_if.write_ready),
-
 
         // Data memory hookup via interface
         .data_mem_read_valid(data_mem_if.read_valid),

@@ -52,3 +52,22 @@ I shouldn't be using the memory object itself, but the associated interface.
 * BEFORE: ```.data_mem_write_ready(data_memory.mem_write_ready)```
 * AFTER: ```.data_mem_write_ready(data_mem_if.mem_write_ready)```
 
+# Unresolve Warnings/Errors
+When running test_matmul:
+```
+# Start time: 21:30:04 on Jun 06,2025
+# ** Note: (vsim-3812) Design is being optimized...
+###### src/gpu.sv(121):     ) program_memory_controller (
+# ** Warning: src/gpu.sv(121): (vopt-2685) [TFMPC] - Too few port connections for 'program_memory_controller'.  Expected 18, found 10.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'mem_write_ready'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'mem_write_data'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'mem_write_address'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'mem_write_valid'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'consumer_write_ready'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'consumer_write_data'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'consumer_write_address'.
+# ** Warning: src/gpu.sv(121): (vopt-2718) [TFMPC] - Missing connection for port 'consumer_write_valid'.
+# ** Note: (vsim-12126) Error and warning message counts have been restored: Errors=0, Warnings=9.
+# //  Questa Sim-64
+```
+
