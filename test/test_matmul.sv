@@ -2,7 +2,7 @@
 // `include "helpers/setup.sv"
 `timescale 1ns/1ns
 
-module test_matadd;
+module test_matmul;
     localparam DATA_MEM_ADDR_BITS     = 8;
     localparam DATA_MEM_DATA_BITS     = 8;
     localparam PROGRAM_MEM_ADDR_BITS  = 8;
@@ -22,7 +22,8 @@ module test_matadd;
     logic [DATA_MEM_DATA_BITS-1:0] matrix_a [0:1][0:1];
     logic [DATA_MEM_DATA_BITS-1:0] matrix_b [0:1][0:1];
     logic [DATA_MEM_DATA_BITS*2-1:0] expected_results [0:3]; // Wider bit width to hold multiplication results
-
+    logic [DATA_MEM_DATA_BITS*2-1:0] actual;
+    
     // Clock generation
     initial clk = 0;
     always #25000 clk = ~clk;
