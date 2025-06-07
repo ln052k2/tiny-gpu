@@ -12,3 +12,7 @@
 * Added SystemVerilog port for test_matadd
 * Added sources.f file for quick compilation (use ```vlog -lint -source -file sources.f```)
 * Changed signals that used input reg -> input logic/wires to move from Verilog to SystemVerilog
+
+**06/05/2025**
+* Ported the matrix multiplication testbench to  
+* Started on debug formatting printouts
