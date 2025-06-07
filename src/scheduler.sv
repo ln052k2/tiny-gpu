@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // SCHEDULER
@@ -14,29 +14,31 @@
 // > Technically, different instructions can branch to different PCs, requiring "branch divergence." In
 //   this minimal implementation, we assume no branch divergence (naive approach for simplicity)
 module scheduler #(
-    parameter THREADS_PER_BLOCK = 4,
+    parameter THREADS_PER_BLOCK = 4
 ) (
     input wire clk,
     input wire reset,
     input wire start,
     
     // Control Signals
-    input reg decoded_mem_read_enable,
-    input reg decoded_mem_write_enable,
-    input reg decoded_ret,
+    input logic decoded_mem_read_enable,
+    input logic decoded_mem_write_enable,
+    input logic decoded_ret,
 
     // Memory Access State
-    input reg [2:0] fetcher_state,
-    input reg [1:0] lsu_state [THREADS_PER_BLOCK-1:0],
+    input logic [2:0] fetcher_state,
+    input wire [1:0] lsu_state [THREADS_PER_BLOCK-1:0],
 
     // Current & Next PC
-    output reg [7:0] current_pc,
-    input reg [7:0] next_pc [THREADS_PER_BLOCK-1:0],
+    output logic [7:0] current_pc,
+    input wire [7:0] next_pc [THREADS_PER_BLOCK-1:0],
 
     // Execution State
-    output reg [2:0] core_state,
-    output reg done
+    output logic [2:0] core_state,
+    output logic done
 );
+    logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
+    
     localparam IDLE = 3'b000, // Waiting to start
         FETCH = 3'b001,       // Fetch instructions from program memory
         DECODE = 3'b010,      // Decode instructions into control signals
@@ -76,7 +78,7 @@ module scheduler #(
                 end
                 WAIT: begin
                     // Wait for all LSUs to finish their request before continuing
-                    reg any_lsu_waiting = 1'b0;
+                    any_lsu_waiting = 1'b0;
                     for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
                         // Make sure no lsu_state = REQUESTING or WAITING
                         if (lsu_state[i] == 2'b01 || lsu_state[i] == 2'b10) begin

@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // DEVICE CONTROL REGISTER
@@ -10,10 +10,10 @@ module dcr (
 
     input wire device_control_write_enable,
     input wire [7:0] device_control_data,
-    output wire [7:0] thread_count,
+    output wire [7:0] thread_count
 );
     // Store device control data in dedicated register
-    reg [7:0] device_conrol_register;
+    logic [7:0] device_conrol_register;
     assign thread_count = device_conrol_register[7:0];
 
     always @(posedge clk) begin
