@@ -48,3 +48,7 @@ Memory class was not declared to be parameterizable, so I moved the parameters t
 ###### test/test_matadd.sv(93):         .data_mem_write_ready(data_memory.mem_write_ready)
 # ** Error: test/test_matadd.sv(93): (vopt-2898) A dynamic or an automatic variable reference (data_memory) is not allowed.
 ```
+I shouldn't be using the memory object itself, but the associated interface.
+* BEFORE: ```.data_mem_write_ready(data_memory.mem_write_ready)```
+* AFTER: ```.data_mem_write_ready(data_mem_if.mem_write_ready)```
+
