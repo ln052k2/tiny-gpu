@@ -11,5 +11,14 @@ Core executes each instruction of the kernel in lockstep per-thread.
 PIPELINE:
 * Pipeline register for each stage of each thread in core.sv
 * Need to edit scheduler.sv, fetcher.sv and decoder.sv to work with multiple concurrent threads
-* Scheduler has to states of multiple threads (and corresponding outputs i.e done and core_state)
+    * Effectively serializes access to program memory and decoding
 
+SCHEDULER:
+* Tells fetcher which thread to fetch next
+
+DECODER:
+* Processes fetched instruction and outputs decoded control signals for active thread
+
+THREADS:
+* Each has own pipeline registers to hold instructions/control signals for each stage
+* Each register is tagged with a threadID

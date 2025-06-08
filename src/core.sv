@@ -40,12 +40,12 @@ module core #(
     input logic [THREADS_PER_BLOCK-1:0] data_mem_write_ready
 );
     // State
-    logic [2:0] core_state;
-    logic [2:0] fetcher_state;
+    logic [2:0] core_state [THREADS_PER_BLOCK-1:0]; // technically, state for each thread
+    logic [2:0] fetcher_state [THREADS_PER_BLOCK-1:0];
     logic [15:0] instruction;
-    logic [7:0] current_pc;
 
     // Intermediate Signals (per thread)
+    logic [7:0] current_pc [THREADS_PER_BLOCK-1:0];
     wire [7:0] next_pc[THREADS_PER_BLOCK-1:0];
     logic [7:0] rs[THREADS_PER_BLOCK-1:0];
     logic [7:0] rt[THREADS_PER_BLOCK-1:0];
@@ -72,58 +72,92 @@ module core #(
     logic decoded_ret;
 
     // Pipeline Stages
+    // Is this the best way to design this? Probably not...
+    // But we're trying to keep as close to the original design as possible
+    // i.e core_state being an output of scheduler 
+    localparam IDLE = 3'b000, // Waiting to start
+        FETCH = 3'b001,       // Fetch instructions from program memory
+        DECODE = 3'b010,      // Decode instructions into control signals
+        REQUEST = 3'b011,     // Request data from registers or memory
+        WAIT = 3'b100,        // Wait for response from memory if necessary
+        EXECUTE = 3'b101,     // Execute ALU and PC calculations
+        UPDATE = 3'b110,      // Update registers, NZP, and PC
+        DONE = 3'b111;        // Done executing this block
+
+    // logic [$clog2(THREADS_PER_BLOCK)-1:0] fetch_thread_ID, decode_thread_ID;
     typedef enum logic [2:0] {
-        IF = 3'b000,  // Instruction Fetch
-        ID = 3'b001,  // Instruction Decode
-        EX = 3'b010,  // Execute
-        MEM = 3'b011, // Memory Access
-        WB = 3'b100   // Write Back
+        STAGE_FETCH,
+        STAGE_DECODE,
+        STAGE_EXECUTE,
+        STAGE_MEMORY,
+        STAGE_WRITEBACK
     } stage_t;
     localparam int PIPELINE_STAGES = 5;
 
-    // Pipeline Register
-    typedef struct packed {
+    // Pipeline registers
+    // Stage 1 -> 2: FETCH to DECODE
+    typedef struct {
+        logic valid;
         logic [7:0] pc;
         logic [15:0] instruction;
-        logic decoded_reg_write_enable;
-        logic decoded_mem_read_enable;
-        logic decoded_mem_write_enable;
-        logic decoded_nzp_write_enable;
-        logic [3:0] decoded_rd_address;
-        logic [3:0] decoded_rs_address;
-        logic [3:0] decoded_rt_address;
-        logic [2:0] decoded_nzp;
-        logic [7:0] decoded_immediate;
-        logic [1:0] decoded_reg_input_mux;
-        logic [1:0] decoded_alu_arithmetic_mux;
-        logic decoded_alu_output_mux;
-        logic decoded_pc_mux;
-        logic decoded_ret;
-        logic [7:0] rs;
-        logic [7:0] rt;
+        logic [$clog2(THREADS_PER_BLOCK)-1:0] thread_id;
+    } fetch_decode_t;
+    fetch_decode_t fetch_decode[THREADS_PER_BLOCK-1:0];
+
+    // Stage 2 -> 3: DECODE to EXECUTE
+    typedef struct {
+        logic [3:0] rd, rs, rt;
+        logic [2:0] nzp;
+        logic [7:0] immediate;
+        logic reg_write_enable, mem_read_enable, 
+              mem_write_enable, nzp_write_enable;
+        logic [1:0] reg_input_mux, alu_arithmetic_mux;
+        logic alu_output_mux, pc_mux, ret;
+    } decode_execute_t;
+    decode_execute_t decode_execute[THREADS_PER_BLOCK-1:0];
+
+    // Stage 3 -> 4: EXECUTE to MEMORY
+    typedef struct {
+        // ALU outputs
         logic [7:0] alu_out;
+        // LSU outputs
+        logic mem_read_valid, mem_write_valid;
+        logic [7:0] mem_read_address, mem_write_address, 
+                    mem_write_data, lsu_out;
         logic [1:0] lsu_state;
-        logic [7:0] lsu_out;
-    } p_register_t;
+        // Registers outputs
+        logic [7:0] rs, rt;
+        // Control signals
+        logic reg_write_enable, nzp_write_enable;
+    } execute_memory_t;
+    execute_memory_t execute_memory[THREADS_PER_BLOCK-1:0];
 
-    p_register_t pipeline_regs[THREADS_PER_BLOCK-1:0][PIPELINE_STAGES-1:0];
+    // Stage 4 -> 5: MEMORY to WRITEBACK
+    typedef struct {
+        logic valid, reg_write_enable, nzp_write_enable;
+        logic ret;
+        logic [7:0] pc, alu_result, mem_read_data;
+        logic [3:0] rd;
+    } memory_writeback_t;
+    memory_writeback_t memory_writeback[THREADS_PER_BLOCK-1:0];
 
-    always_ff @(posedge clk) begin
-        for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
-            if (reset) begin
-                if_id[i].valid    <= 0;
-                id_ex[i].valid    <= 0;
-                ex_mem[i].valid   <= 0;
-                mem_wb[i].valid   <= 0;
-            end else if (i < thread_count) begin
-                mem_wb[i] <= ex_mem[i];
-                ex_mem[i] <= id_ex[i];
-                id_ex[i]  <= if_id[i];
-                if_id[i]  <= fetch_output[i];  // You define this from fetcher
-            end
-        end
-    end
-
+    // Scheduler
+    scheduler #(
+        .THREADS_PER_BLOCK(THREADS_PER_BLOCK),
+    ) scheduler_instance (
+        .clk(clk),
+        .reset(reset),
+        .start(start),
+        .fetcher_state(fetcher_state),
+        .core_state(core_state),
+        .decoded_mem_read_enable(decoded_mem_read_enable),
+        .decoded_mem_write_enable(decoded_mem_write_enable),
+        .decoded_ret(decoded_ret),
+        .lsu_state(lsu_state),
+        .current_pc(current_pc),
+        .next_pc(next_pc),
+        .done(done)
+    );
 
     // Fetcher
     fetcher #(
@@ -133,7 +167,7 @@ module core #(
         .clk(clk),
         .reset(reset),
         .core_state(core_state),
-        .current_pc(current_pc),
+        .current_pc(current_pc[current_thread]),
         .mem_read_valid(program_mem_read_valid),
         .mem_read_address(program_mem_read_address),
         .mem_read_ready(program_mem_read_ready),
@@ -164,23 +198,6 @@ module core #(
         .decoded_ret(decoded_ret)
     );
 
-    // Scheduler
-    scheduler #(
-        .THREADS_PER_BLOCK(THREADS_PER_BLOCK)
-    ) scheduler_instance (
-        .clk(clk),
-        .reset(reset),
-        .start(start),
-        .fetcher_state(fetcher_state),
-        .core_state(core_state),
-        .decoded_mem_read_enable(decoded_mem_read_enable),
-        .decoded_mem_write_enable(decoded_mem_write_enable),
-        .decoded_ret(decoded_ret),
-        .lsu_state(lsu_state),
-        .current_pc(current_pc),
-        .next_pc(next_pc),
-        .done(done)
-    );
 
     // Dedicated ALU, LSU, registers, & PC unit for each thread this core has capacity for
     genvar i;
@@ -192,10 +209,10 @@ module core #(
                 .reset(reset),
                 .enable(i < thread_count),
                 .core_state(core_state),
-                .decoded_alu_arithmetic_mux(pipeline_regs[i][STAGE_EXECUTE].decoded_alu_arithmetic_mux),
-                .decoded_alu_output_mux(pipeline_regs[i][STAGE_EXECUTE].decoded_alu_output_mux),
-                .rs(pipeline_regs[i][STAGE_EXECUTE].rs),
-                .rt(pipeline_regs[i][STAGE_EXECUTE].rt),
+                .decoded_alu_arithmetic_mux(decoded_alu_arithmetic_mux),
+                .decoded_alu_output_mux(decoded_alu_output_mux),
+                .rs(rs[i]),
+                .rt(rt[i]),
                 .alu_out(alu_out[i])
             );
 
@@ -205,8 +222,8 @@ module core #(
                 .reset(reset),
                 .enable(i < thread_count),
                 .core_state(core_state),
-                .decoded_mem_read_enable(pipeline_regs[i][STAGE_MEMORY].decoded_mem_read_enable),
-                .decoded_mem_write_enable(pipeline_regs[i][STAGE_MEMORY].decoded_mem_write_enable),
+                .decoded_mem_read_enable(decoded_mem_read_enable),
+                .decoded_mem_write_enable(decoded_mem_write_enable),
                 .mem_read_valid(data_mem_read_valid[i]),
                 .mem_read_address(data_mem_read_address[i]),
                 .mem_read_ready(data_mem_read_ready[i]),
@@ -215,36 +232,36 @@ module core #(
                 .mem_write_address(data_mem_write_address[i]),
                 .mem_write_data(data_mem_write_data[i]),
                 .mem_write_ready(data_mem_write_ready[i]),
-                .rs(pipeline_regs[i][STAGE_MEMORY].rs),
-                .rt(pipeline_regs[i][STAGE_MEMORY].rt),
+                .rs(rs[i]),
+                .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
                 .lsu_out(lsu_out[i])
             );
 
-            // Register Files
+            // Register File
             registers #(
                 .THREADS_PER_BLOCK(THREADS_PER_BLOCK),
                 .THREAD_ID(i),
-                .DATA_BITS(DATA_MEM_DATA_BITS)
-            ) registers_instance (
+                .DATA_BITS(DATA_MEM_DATA_BITS),
+            ) register_instance (
                 .clk(clk),
                 .reset(reset),
                 .enable(i < thread_count),
                 .block_id(block_id),
                 .core_state(core_state),
-                .decoded_reg_write_enable(pipeline_regs[i][STAGE_WRITEBACK].decoded_reg_write_enable),
-                .decoded_reg_input_mux(pipeline_regs[i][STAGE_WRITEBACK].decoded_reg_input_mux),
-                .decoded_rd_address(pipeline_regs[i][STAGE_WRITEBACK].decoded_rd_address),
-                .decoded_rs_address(pipeline_regs[i][STAGE_WRITEBACK].decoded_rs_address),
-                .decoded_rt_address(pipeline_regs[i][STAGE_WRITEBACK].decoded_rt_address),
-                .decoded_immediate(pipeline_regs[i][STAGE_WRITEBACK].decoded_immediate),
+                .decoded_reg_write_enable(decoded_reg_write_enable),
+                .decoded_reg_input_mux(decoded_reg_input_mux),
+                .decoded_rd_address(decoded_rd_address),
+                .decoded_rs_address(decoded_rs_address),
+                .decoded_rt_address(decoded_rt_address),
+                .decoded_immediate(decoded_immediate),
                 .alu_out(alu_out[i]),
                 .lsu_out(lsu_out[i]),
                 .rs(rs[i]),
                 .rt(rt[i])
             );
 
-            // PC
+            // Program Counter
             pc #(
                 .DATA_MEM_DATA_BITS(DATA_MEM_DATA_BITS),
                 .PROGRAM_MEM_ADDR_BITS(PROGRAM_MEM_ADDR_BITS)
@@ -253,59 +270,80 @@ module core #(
                 .reset(reset),
                 .enable(i < thread_count),
                 .core_state(core_state),
-                .decoded_nzp(pipeline_regs[i][STAGE_WRITEBACK].decoded_nzp),
-                .decoded_immediate(pipeline_regs[i][STAGE_WRITEBACK].decoded_immediate),
-                .decoded_nzp_write_enable(pipeline_regs[i][STAGE_WRITEBACK].decoded_nzp_write_enable),
-                .decoded_pc_mux(pipeline_regs[i][STAGE_WRITEBACK].decoded_pc_mux),
+                .decoded_nzp(decoded_nzp),
+                .decoded_immediate(decoded_immediate),
+                .decoded_nzp_write_enable(decoded_nzp_write_enable),
+                .decoded_pc_mux(decoded_pc_mux),
                 .alu_out(alu_out[i]),
-                .current_pc(pipeline_regs[i][STAGE_WRITEBACK].pc),
-                .next_pc()  // Next PC logic here or pipelined separately
+                .current_pc(current_pc),
+                .next_pc(next_pc[i])
             );
         end
     endgenerate
 
-    // Pipeline register update and advance logic
-    always_ff @(posedge clk or posedge reset) begin
-        if (reset) begin
-            integer t, s;
-            for (t = 0; t < THREADS_PER_BLOCK; t = t + 1) begin
-                for (s = 0; s < PIPELINE_STAGES; s = s + 1) begin
-                    pipeline_regs[t][s] <= '0;
+    // Update pipeline logic
+    always_ff @(posedge clk) begin
+        for (int i = 0; i < THREADS_PER_BLOCK; i = i + 1) begin
+            case (core_state[i])
+                IDLE: begin
+                    fetch_decode[i].valid <= 0;
+                    decode_execute[i].valid <= 0;
+                    execute_memory[i].valid <= 0;
+                    memory_writeback[i].valid <= 0;
                 end
-            end
-        end else begin
-            integer t;
-            for (t = 0; t < THREADS_PER_BLOCK; t = t + 1) begin
-                // Advance pipeline stages for each thread
-                pipeline_regs[t][STAGE_WRITEBACK] <= pipeline_regs[t][STAGE_MEMORY];
-                pipeline_regs[t][STAGE_MEMORY]    <= pipeline_regs[t][STAGE_EXECUTE];
-                pipeline_regs[t][STAGE_EXECUTE]   <= pipeline_regs[t][STAGE_DECODE];
-                pipeline_regs[t][STAGE_DECODE]    <= pipeline_regs[t][STAGE_FETCH];
 
-                // Fetch stage gets new inputs
-                pipeline_regs[t][STAGE_FETCH].pc           <= /* current PC for thread t */;
-                pipeline_regs[t][STAGE_FETCH].instruction  <= /* fetched instruction for thread t */;
-                pipeline_regs[t][STAGE_FETCH].decoded_reg_write_enable <= decoded_reg_write_enable;
-                pipeline_regs[t][STAGE_FETCH].decoded_mem_read_enable  <= decoded_mem_read_enable;
-                pipeline_regs[t][STAGE_FETCH].decoded_mem_write_enable <= decoded_mem_write_enable;
-                pipeline_regs[t][STAGE_FETCH].decoded_nzp_write_enable <= decoded_nzp_write_enable;
-                pipeline_regs[t][STAGE_FETCH].decoded_rd_address       <= decoded_rd_address;
-                pipeline_regs[t][STAGE_FETCH].decoded_rs_address       <= decoded_rs_address;
-                pipeline_regs[t][STAGE_FETCH].decoded_rt_address       <= decoded_rt_address;
-                pipeline_regs[t][STAGE_FETCH].decoded_nzp              <= decoded_nzp;
-                pipeline_regs[t][STAGE_FETCH].decoded_immediate        <= decoded_immediate;
-                pipeline_regs[t][STAGE_FETCH].decoded_reg_input_mux    <= decoded_reg_input_mux;
-                pipeline_regs[t][STAGE_FETCH].decoded_alu_arithmetic_mux <= decoded_alu_arithmetic_mux;
-                pipeline_regs[t][STAGE_FETCH].decoded_alu_output_mux   <= decoded_alu_output_mux;
-                pipeline_regs[t][STAGE_FETCH].decoded_pc_mux           <= decoded_pc_mux;
-                pipeline_regs[t][STAGE_FETCH].decoded_ret              <= decoded_ret;
-                // Set rs, rt, alu_out, lsu_state, lsu_out as needed or 0 for fetch stage
-                pipeline_regs[t][STAGE_FETCH].rs                       <= 0;
-                pipeline_regs[t][STAGE_FETCH].rt                       <= 0;
-                pipeline_regs[t][STAGE_FETCH].alu_out                  <= 0;
-                pipeline_regs[t][STAGE_FETCH].lsu_state                <= 0;
-                pipeline_regs[t][STAGE_FETCH].lsu_out                  <= 0;
-            end
+                // FETCH -> DECODE
+                FETCH: begin
+                    fetch_decode[i].valid        <= 1;
+                    fetch_decode[i].instruction  <= program_mem_read_data[i];
+                    fetch_decode[i].pc           <= current_pc[i];
+                    fetch_decode[i].thread_id    <= i;
+                end
+
+                // DECODE -> EXECUTE
+                DECODE:
+                    decode_execute[i].rd                <= decoded_rd_address;
+                    decode_execute[i].rs                <= decoded_rs_address;
+                    decode_execute[i].rt                <= decoded_rt_address;
+                    decode_execute[i].nzp               <= decoded_nzp;
+                    decode_execute[i].immediate         <= decoded_immediate;
+                    decode_execute[i].reg_write_enable  <= decoded_reg_write_enable;
+                    decode_execute[i].mem_read_enable   <= decoded_mem_read_enable;
+                    decode_execute[i].mem_write_enable  <= decoded_mem_write_enable;
+                    decode_execute[i].nzp_write_enable  <= decoded_nzp_write_enable;
+                    decode_execute[i].reg_input_mux     <= decoded_reg_input_mux;
+                    decode_execute[i].alu_arithmetic_mux<= decoded_alu_arithmetic_mux;
+                    decode_execute[i].alu_output_mux    <= decoded_alu_output_mux;
+                    decode_execute[i].pc_mux            <= decoded_pc_mux;
+                    decode_execute[i].ret               <= decoded_ret;
+
+                // EXECUTE -> MEMORY
+                EXECUTE:
+                    execute_memory[i].alu_out        <= alu_out[i];
+                    execute_memory[i].lsu_out        <= lsu_out[i];
+                    execute_memory[i].mem_read_valid <= decoded_mem_read_enable;
+                    execute_memory[i].mem_write_valid<= decoded_mem_write_enable;
+                    execute_memory[i].mem_read_address <= data_mem_read_address[i];
+                    execute_memory[i].mem_write_address<= data_mem_write_address[i];
+                    execute_memory[i].mem_write_data   <= data_mem_write_data[i];
+                    execute_memory[i].lsu_state        <= lsu_state[i];
+                    execute_memory[i].rs               <= rs[i];
+                    execute_memory[i].rt               <= rt[i];
+                    execute_memory[i].reg_write_enable <= decoded_reg_write_enable;
+                    execute_memory[i].nzp_write_enable <= decoded_nzp_write_enable;
+                
+                MEMORY:
+                    // MEMORY -> WRITEBACK
+                    memory_writeback[i].valid        <= decoded_reg_write_enable;
+                    memory_writeback[i].reg_write_enable <= decoded_reg_write_enable;
+                    memory_writeback[i].nzp_write_enable <= decoded_nzp_write_enable;
+                    memory_writeback[i].ret          <= decoded_ret;
+                    memory_writeback[i].pc           <= current_pc[i];
+                    memory_writeback[i].alu_result   <= alu_out[i];
+                    memory_writeback[i].mem_read_data<= data_mem_read_data[i];
+                    memory_writeback[i].rd           <= decoded_rd_address;
+            endcase
         end
     end
+
 endmodule

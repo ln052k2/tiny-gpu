@@ -21,8 +21,8 @@ module scheduler #(
     input wire start,
     
     // Control Signals
-    input logic decoded_mem_read_enable,
-    input logic decoded_mem_write_enable,
+    input logic decoded_mem_read_enable [THREADS_PER_BLOCK],
+    input logic decoded_mem_write_enable [THREADS_PER_BLOCK],
     input logic decoded_ret,
 
     // Memory Access State
@@ -49,7 +49,6 @@ module scheduler #(
         EXECUTE = 3'b101,     // Execute ALU and PC calculations
         UPDATE = 3'b110,      // Update registers, NZP, and PC
         DONE = 3'b111;        // Done executing this block
-
 
     integer i;
     always @(posedge clk) begin
