@@ -13,14 +13,14 @@ interface mem_if #(
     logic [DATA_BITS-1:0]        write_data    [CHANNELS];
     logic [CHANNELS-1:0]         write_ready;
 
-    modport ro (
-        input  read_valid, read_address,
-        output read_data, read_ready
+    modport consumer (
+        input read_valid, read_address, write_valid, write_address, write_data,
+        output read_ready, write_ready, read_data
     );
 
-    modport rw (
-        input  read_valid, read_address,
-               write_valid, write_address, write_data,
-        output read_data, read_ready, write_ready
+    modport mem (
+        output read_valid, read_address, write_valid, write_address, write_data,
+        input read_ready, write_ready, read_data
     );
+    
 endinterface
