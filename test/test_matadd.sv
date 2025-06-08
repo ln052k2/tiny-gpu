@@ -98,7 +98,7 @@ module test_matadd;
         .program_mem_if(program_mem_if),
 
         // Data memory hookup via interface
-        .data_mem_if(data_mem_if),
+        .data_mem_if(data_mem_if)
     );
 
     // always @(posedge clk) begin

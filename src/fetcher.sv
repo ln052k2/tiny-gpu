@@ -16,7 +16,7 @@ module fetcher #(
     input logic [7:0] current_pc,
 
     // Program Memory
-    mem_if.mem mem_if;
+    mem_if.mem mem_if,
     // Fetcher Output
     output logic [2:0] fetcher_state,
     output logic [PROGRAM_MEM_DATA_BITS-1:0] instruction
@@ -45,7 +45,7 @@ module fetcher #(
                     // Wait for response from program memory
                     if (mem_if.read_ready) begin
                         fetcher_state <= FETCHED;
-                        instruction <= mem_read_data; // Store the instruction when received
+                        instruction <= mem_if.read_data; // Store the instruction when received
                         mem_if.read_valid <= 0;
                     end
                 end

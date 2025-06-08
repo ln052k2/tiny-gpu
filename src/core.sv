@@ -24,9 +24,9 @@ module core #(
     input wire [$clog2(THREADS_PER_BLOCK):0] thread_count,
 
     // Program Memory
-    mem_if.mem program_mem_if;
+    mem_if.mem program_mem_if,
     // Data Memory
-    mem_if.mem data_mem_if;
+    mem_if.mem data_mem_if
 );
     // State
     logic [2:0] core_state;
@@ -69,7 +69,7 @@ module core #(
         .reset(reset),
         .core_state(core_state),
         .current_pc(current_pc),
-        .mem_if(fetcher_if),
+        .mem_if(program_mem_if),
         .fetcher_state(fetcher_state),
         .instruction(instruction) 
     );

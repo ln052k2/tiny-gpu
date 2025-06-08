@@ -28,8 +28,8 @@ module gpu #(
     input wire device_control_write_enable,
     input wire [7:0] device_control_data,
 
-    mem_if.mem program_mem_if;
-    mem_if.mem data_mem_if;
+    mem_if.mem program_mem_if,
+    mem_if.mem data_mem_if
 );
 
     // Control
@@ -48,7 +48,7 @@ module gpu #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
         .CHANNELS(NUM_LSUS)
-    ) lsu_if;
+    ) lsu_if();
 
     // Fetcher <> Program Memory Controller Channels
     // Interface encompasses all cores 
@@ -57,7 +57,7 @@ module gpu #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
         .CHANNELS(NUM_FETCHERS)
-    ) fetcher_if;
+    ) fetcher_if();
     
     // Device Control Register
     dcr dcr_instance (
@@ -80,7 +80,7 @@ module gpu #(
         .reset(reset),
 
         .consumer_if(lsu_if),
-        .mem_if(data_mem_if),
+        .mem_if(data_mem_if)
     );
 
     // Program Memory Controller
@@ -125,13 +125,13 @@ module gpu #(
                 .ADDR_BITS(DATA_MEM_ADDR_BITS),
                 .DATA_BITS(DATA_MEM_DATA_BITS),
                 .CHANNELS(THREADS_PER_BLOCK)
-            ) core_lsu_if;
+            ) core_lsu_if();
 
             mem_if #(
                 .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
                 .DATA_BITS(PROGRAM_MEM_DATA_BITS),
                 .CHANNELS(1)
-            ) core_fetcher_if;
+            ) core_fetcher_if();
 
             // Messy workaround -- is it worth it???
             assign core_program_mem_if.read_valid[0]   = fetcher_if.read_valid[i];

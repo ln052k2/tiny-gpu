@@ -16,9 +16,9 @@ module controller #(
     input wire reset,
 
     // Consumer Interface (Fetchers / LSUs)
-    mem_if.consumer consumer_if;
+    mem_if.consumer consumer_if,
     // Memory Interface (Data / Program)
-    mem_if.mem mem_if;
+    mem_if.mem mem_if
 );
     localparam IDLE = 3'b000, 
         READ_WAITING = 3'b010, 
@@ -60,7 +60,7 @@ module controller #(
                                 current_consumer[i] <= j;
 
                                 mem_if.read_valid[i] <= 1;
-                                mem_if.read_address[i] <= consumer_read_address[j];
+                                mem_if.read_address[i] <= consumer_if.read_address[j];
                                 controller_state[i] <= READ_WAITING;
 
                                 // Once we find a pending request, pick it up with this channel and stop looking for requests
@@ -105,7 +105,7 @@ module controller #(
                         end
                     end
                     WRITE_RELAYING: begin 
-                        if (!consumer_write_valid[current_consumer[i]]) begin 
+                        if (!consumer_if.write_valid[current_consumer[i]]) begin 
                             channel_serving_consumer[current_consumer[i]] = 0;
                             consumer_if.write_ready[current_consumer[i]] <= 0;
                             controller_state[i] <= IDLE;
