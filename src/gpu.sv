@@ -134,10 +134,10 @@ module gpu #(
             ) core_fetcher_if();
 
             // Messy workaround -- is it worth it???
-            assign core_program_mem_if.read_valid[0]   = fetcher_if.read_valid[i];
-            assign core_program_mem_if.read_address[0] = fetcher_if.read_address[i];
-            assign fetcher_if.read_ready[i]             = core_program_mem_if.read_ready[0];
-            assign fetcher_if.read_data[i]              = core_program_mem_if.read_data[0];
+            assign core_fetcher_if.read_valid[0]   = fetcher_if.read_valid[i];
+            assign core_fetcher_if.read_address[0] = fetcher_if.read_address[i];
+            assign fetcher_if.read_ready[i]             = core_fetcher_if.read_ready[0];
+            assign fetcher_if.read_data[i]              = core_fetcher_if.read_data[0];
 
             // Pass through signals between LSUs and data memory controller
             genvar j;
