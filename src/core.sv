@@ -318,7 +318,7 @@ module core #(
                     decode_execute[i].ret               <= decoded_ret;
 
                 // EXECUTE -> MEMORY
-                EXECUTE:
+                EXECUTE: begin
                     execute_memory[i].alu_out        <= alu_out[i];
                     execute_memory[i].lsu_out        <= lsu_out[i];
                     execute_memory[i].mem_read_valid <= decoded_mem_read_enable;
@@ -331,8 +331,9 @@ module core #(
                     execute_memory[i].rt               <= rt[i];
                     execute_memory[i].reg_write_enable <= decoded_reg_write_enable;
                     execute_memory[i].nzp_write_enable <= decoded_nzp_write_enable;
-                
-                MEMORY:
+                end
+
+                MEMORY: begin
                     // MEMORY -> WRITEBACK
                     memory_writeback[i].valid        <= decoded_reg_write_enable;
                     memory_writeback[i].reg_write_enable <= decoded_reg_write_enable;
@@ -342,6 +343,7 @@ module core #(
                     memory_writeback[i].alu_result   <= alu_out[i];
                     memory_writeback[i].mem_read_data<= data_mem_read_data[i];
                     memory_writeback[i].rd           <= decoded_rd_address;
+                end
             endcase
         end
     end
