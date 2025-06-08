@@ -35,9 +35,12 @@ module scheduler #(
 
     // Execution State
     output logic [2:0] core_state [THREADS_PER_BLOCK-1:0],
-    output logic done [THREADS_PER_BLOCK-1:0]
+    // output logic thread_done [THREADS_PER_BLOCK-1:0],
+    output logic done
 );
-   
+    logic [THREADS_PER_BLOCK-1:0] thread_done;
+    logic kernel_end;
+
     localparam IDLE = 3'b000, // Waiting to start
         FETCH = 3'b001,       // Fetch instructions from program memory
         DECODE = 3'b010,      // Decode instructions into control signals
@@ -46,24 +49,39 @@ module scheduler #(
         EXECUTE = 3'b101,     // Execute ALU and PC calculations
         UPDATE = 3'b110,      // Update registers, NZP, and PC
         DONE = 3'b111;        // Done executing this block
-    
-     always @(posedge clk) begin
+
+
+    integer i;
+    always @(posedge clk) begin
         if (reset) begin
-            for (i = 0; i < THREADS_PER_BLOCK; i++) begin
+            kernel_done <= 1'b0;
+            done <= 1'b0;
+            done_thread <= '0;
+            for (i = 0; i < THREADS_PER_BLOCK; i = i + 1) begin
                 current_pc[i] <= 0;
                 core_state[i] <= IDLE;
-                done[i] <= 0;
             end
         end else begin
-            for (i = 0; i < THREADS_PER_BLOCK; i++) begin
+            // If decoded_ret is asserted anywhere, set kernel_done flag
+            if (decoded_ret)
+                kernel_done <= 1'b1;
+
+            for (i = 0; i < THREADS_PER_BLOCK; i = i + 1) begin
                 case (core_state[i])
                     IDLE: begin
-                        if (start) begin
+                        if (start && !kernel_done) begin
                             core_state[i] <= FETCH;
+                            done_thread[i] <= 1'b0;
+                        end else if (kernel_done) begin
+                            done_thread[i] <= 1'b1;
+                            core_state[i] <= DONE;
                         end
                     end
                     FETCH: begin
-                        if (fetcher_state[i] == 3'b010) begin
+                        if (kernel_done) begin
+                            done_thread[i] <= 1'b1;
+                            core_state[i] <= DONE;
+                        end else if (fetcher_state[i] == 3'b010) begin
                             core_state[i] <= DECODE;
                         end
                     end
@@ -74,7 +92,6 @@ module scheduler #(
                         core_state[i] <= WAIT;
                     end
                     WAIT: begin
-                        // Wait for LSU to finish
                         if (!(lsu_state[i] == 2'b01 || lsu_state[i] == 2'b10)) begin
                             core_state[i] <= EXECUTE;
                         end
@@ -84,7 +101,7 @@ module scheduler #(
                     end
                     UPDATE: begin
                         if (decoded_ret) begin
-                            done[i] <= 1;
+                            done_thread[i] <= 1'b1;
                             core_state[i] <= DONE;
                         end else begin
                             current_pc[i] <= next_pc[i];
@@ -92,10 +109,15 @@ module scheduler #(
                         end
                     end
                     DONE: begin
+                        done_thread[i] <= 1'b1;
                         // Remain done until reset
                     end
                 endcase
             end
+
+            // All threads done => done = 1
+            // Will need to have per-thread decoded_ret in the future if supporting branch divergence
+            done <= &done_thread;
         end
     end
 endmodule
