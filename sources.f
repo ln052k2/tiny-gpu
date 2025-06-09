@@ -10,8 +10,11 @@ src/lsu.sv
 src/pc.sv
 src/registers.sv
 src/scheduler.sv
+
 test/helpers/logger.sv
 test/helpers/memory.sv
 test/helpers/memoryif.sv
 test/test_matadd.sv
 test/test_matmul.sv
+test/test_generic.sv
+
