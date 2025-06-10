@@ -114,6 +114,12 @@ module core #(
         .done(done)
     );
 
+    mem_if #(
+        .ADDR_BITS(8),
+        .DATA_BITS(8),
+        .CHANNELS(1)
+    ) lsu_mem_if [THREADS_PER_BLOCK] ();
+
     // Dedicated ALU, LSU, registers, & PC unit for each thread this core has capacity for
     genvar i;
     generate
@@ -139,14 +145,15 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_read_valid(data_mem_if.read_valid[i]),
-                .mem_read_address(data_mem_if.read_address[i]),
-                .mem_read_ready(data_mem_if.read_ready[i]),
-                .mem_read_data(data_mem_if.read_data[i]),
-                .mem_write_valid(data_mem_if.write_valid[i]),
-                .mem_write_address(data_mem_if.write_address[i]),
-                .mem_write_data(data_mem_if.write_data[i]),
-                .mem_write_ready(data_mem_if.write_ready[i]),
+                .mem_if(lsu_mem_if)
+                // .mem_read_valid(data_mem_if.read_valid[i]),
+                // .mem_read_address(data_mem_if.read_address[i]),
+                // .mem_read_ready(data_mem_if.read_ready[i]),
+                // .mem_read_data(data_mem_if.read_data[i]),
+                // .mem_write_valid(data_mem_if.write_valid[i]),
+                // .mem_write_address(data_mem_if.write_address[i]),
+                // .mem_write_data(data_mem_if.write_data[i]),
+                // .mem_write_ready(data_mem_if.write_ready[i]),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
