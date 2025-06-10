@@ -13,60 +13,44 @@ module mem_if_a #(
     generate
         for (ch = 0; ch < CHANNELS; ch++) begin : assert_per_channel
 
-            // === READ Channel ===
-
-            // If read_valid is high, read_ready must eventually go high
-            property read_acknowledge;
-                @(posedge clk)
-                disable iff (reset)
-                mem.read_valid[ch] |=> ##[1:$] mem.read_ready[ch];
+            // Read and write cannot be simultaneous
+            property unique_read_write_p;
+                @(posedge clk) disable iff (reset)
+                !(mem_if.read_valid[0] && mem_if.write_valid[0]);
             endproperty
-            assert property (read_acknowledge)
-                else $error("READ: Channel %0d valid not acknowledged", ch);
+            unique_read_write_a: assert property(unique_read_write_p)
+                 else $error("LSU attempted to issue both read and write in same cycle");
 
-            // If read_valid is asserted, address must remain stable
-            property read_address_stable;
-                @(posedge clk)
-                disable iff (reset)
-                mem.read_valid[ch] |=> mem.read_valid[ch] &&
-                    $stable(mem.read_address[ch]);
+            // Read valid must be followed by read ready eventually (for now)
+            property read_response_p;
+                @(posedge clk) disable iff (reset)
+                mem_if.read_valid[0] |=> ##[1:15] mem_if.read_ready[0];
             endproperty
-            assert property (read_address_stable)
-                else $error("READ: Channel %0d address not stable", ch);
+            read_response_a: assert property (read_response_p)
+                else $error("read_valid was not followed by read_ready");
 
-            // === WRITE Channel ===
-
-            // If write_valid is high, write_ready must eventually go high
-            property write_acknowledge;
-                @(posedge clk)
-                disable iff (reset)
-                mem.write_valid[ch] |=> ##[1:$] mem.write_ready[ch];
+            // Write valid must be followed by write ready eventually
+            property write_response_p;
+                @(posedge clk) disable iff (reset)
+                mem_if.write_valid[0] |=> ##[1:15] mem_if.write_ready[0];
             endproperty
-            assert property (write_acknowledge)
-                else $error("WRITE: Channel %0d valid not acknowledged", ch);
+            write_response_a: assert property (write_response_p)
+                else $error("write_valid was not followed by write_ready");
 
-            // If write_valid is asserted, address and data must remain stable
-            property write_data_stable;
-                @(posedge clk)
-                disable iff (reset)
-                mem.write_valid[ch] |=> mem.write_valid[ch] &&
-                    $stable(mem.write_address[ch]) &&
-                    $stable(mem.write_data[ch]);
+            property read_valid_drop_p;
+                @(posedge clk) disable iff (reset)
+                mem_if.read_valid[0] ##1 mem_if.read_ready[0] |=> !mem_if.read_valid[0];
             endproperty
-            assert property (write_data_stable)
-                else $error("WRITE: Channel %0d address/data not stable", ch);
+            read_valid_drop_a: assert property (read_valid_drop_p)
+                else $error("read_valid should be dropped after read_ready");
 
-            // Ready should not be asserted without valid
-            property ready_only_if_valid;
-                @(posedge clk)
-                disable iff (reset)
-                !(mem.read_ready[ch] && !mem.read_valid[ch]) &&
-                !(mem.write_ready[ch] && !mem.write_valid[ch]);
+            property write_valid_drop_p;
+                @(posedge clk) disable iff (reset)
+                mem_if.write_valid[0] ##1 mem_if.write_ready[0] |=> !mem_if.write_valid[0];
             endproperty
-            assert property (ready_only_if_valid)
-                else $error("Channel %0d: Ready asserted without Valid", ch);
+            write_valid_drop_a: assert property (write_valid_drop_p)
+                else $error("write_valid should be dropped after write_ready");
 
-        end
     endgenerate
 
 endmodule

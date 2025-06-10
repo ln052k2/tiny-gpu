@@ -41,6 +41,28 @@ module test_matmul;
         .CHANNELS(DATA_MEM_CHANNELS)
     ) data_mem_if();
 
+    // Assertions for PROGRAM memory interface
+    mem_if_assertions #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) assert_program_mem (
+        .clk(clk),
+        .reset(reset),
+        .mem(program_mem_if)
+    );
+
+    // Assertions for DATA memory interface
+    mem_if_assertions #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) assert_data_mem (
+        .clk(clk),
+        .reset(reset),
+        .mem(data_mem_if)
+    );
+    
     // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),

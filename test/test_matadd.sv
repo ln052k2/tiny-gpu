@@ -38,7 +38,7 @@ module test_matadd;
         .CHANNELS(DATA_MEM_CHANNELS)
     ) data_mem_if();
 
-    // Bind assertions for PROGRAM memory interface
+    // Assertions for PROGRAM memory interface
     mem_if_assertions #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
@@ -49,7 +49,7 @@ module test_matadd;
         .mem(program_mem_if)
     );
 
-    // Bind assertions for DATA memory interface
+    // Assertions for DATA memory interface
     mem_if_assertions #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
@@ -59,6 +59,7 @@ module test_matadd;
         .reset(reset),
         .mem(data_mem_if)
     );
+    
     // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
