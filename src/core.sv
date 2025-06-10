@@ -116,6 +116,26 @@ module core #(
         .done(done)
     );
 
+    // Add cache
+    mem_if #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) cache_if();
+
+    cache #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(THREADS_PER_BLOCK),       // 4
+        .CACHE_LINES(16)                    // You can change this as needed
+    ) cache_instance (
+        .clk(clk),
+        .reset(reset),
+        .cache_if(cache_if),
+        .data_mem_if(data_mem_if)
+    );
+
+
     // Dedicated ALU, LSU, registers, & PC unit for each thread this core has capacity for
     genvar i;
     generate
@@ -141,14 +161,14 @@ module core #(
             ) core_lsu_if();
 
             always_ff @(posedge clk) begin
-                data_mem_if.read_valid[i]      <= core_lsu_if.read_valid[0];
-                data_mem_if.read_address[i]    <= core_lsu_if.read_address[0];
-                data_mem_if.write_valid[i]     <= core_lsu_if.write_valid[0];
-                data_mem_if.write_address[i]   <= core_lsu_if.write_address[0];
-                data_mem_if.write_data[i]      <= core_lsu_if.write_data[0];
-                core_lsu_if.read_ready[0]      <= data_mem_if.read_ready[i];
-                core_lsu_if.read_data[0]       <= data_mem_if.read_data[i];
-                core_lsu_if.write_ready[0]     <= data_mem_if.write_ready[i];
+                cache_if.read_valid[i]      <= core_lsu_if.read_valid[0];
+                cache_if.read_address[i]    <= core_lsu_if.read_address[0];
+                cache_if.write_valid[i]     <= core_lsu_if.write_valid[0];
+                cache_if.write_address[i]   <= core_lsu_if.write_address[0];
+                cache_if.write_data[i]      <= core_lsu_if.write_data[0];
+                core_lsu_if.read_ready[0]      <= cache_if.read_ready[i];
+                core_lsu_if.read_data[0]       <= cache_if.read_data[i];
+                core_lsu_if.write_ready[0]     <= cache_if.write_ready[i];
             end
 
 
