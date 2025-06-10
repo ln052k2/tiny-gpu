@@ -4,6 +4,7 @@
 // INSTRUCTION FETCHER
 // > Retrieves the instruction at the current PC from global data memory
 // > Each core has it's own fetcher
+
 module fetcher #(
     parameter PROGRAM_MEM_ADDR_BITS = 8,
     parameter PROGRAM_MEM_DATA_BITS = 16
@@ -21,9 +22,8 @@ module fetcher #(
     output logic [2:0] fetcher_state,
     output logic [PROGRAM_MEM_DATA_BITS-1:0] instruction
 );
-    localparam IDLE = 3'b000, 
-        FETCHING = 3'b001, 
-        FETCHED = 3'b010;
+
+    import fetcher_states_pkg::*;
     
     always @(posedge clk) begin
         if (reset) begin
@@ -35,7 +35,7 @@ module fetcher #(
             case (fetcher_state)
                 IDLE: begin
                     // Start fetching when core_state = FETCH
-                    if (core_state == 3'b001) begin
+                    if (core_state == core_states_pkg::FETCH) begin
                         fetcher_state <= FETCHING;
                         mem_if.read_valid <= 1;
                         mem_if.read_address[0] <= current_pc;
@@ -51,7 +51,7 @@ module fetcher #(
                 end
                 FETCHED: begin
                     // Reset when core_state = DECODE
-                    if (core_state == 3'b010) begin 
+                    if (core_state == core_states_pkg::DECODE) begin 
                         fetcher_state <= IDLE;
                     end
                 end

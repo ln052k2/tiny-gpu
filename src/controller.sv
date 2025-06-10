@@ -5,6 +5,7 @@
 // > Receives memory requests from all cores
 // > Throttles requests based on limited external memory bandwidth
 // > Waits for responses from external memory and distributes them back to cores
+
 module controller #(
     parameter ADDR_BITS = 8,
     parameter DATA_BITS = 16,
@@ -20,14 +21,11 @@ module controller #(
     // Memory Interface (Data / Program)
     mem_if.mem mem_if
 );
-    localparam IDLE = 3'b000, 
-        READ_WAITING = 3'b010, 
-        WRITE_WAITING = 3'b011,
-        READ_RELAYING = 3'b100,
-        WRITE_RELAYING = 3'b101;
+
+    import controller_states_pkg::*;
 
     // Keep track of state for each channel and which jobs each channel is handling
-    logic [2:0] controller_state [NUM_CHANNELS-1:0];
+    controller_state_e controller_state [NUM_CHANNELS-1:0];
     logic [$clog2(NUM_CONSUMERS)-1:0] current_consumer [NUM_CHANNELS-1:0]; // Which consumer is each channel currently serving
     logic [NUM_CONSUMERS-1:0] channel_serving_consumer; // Which channels are being served? Prevents many workers from picking up the same request.
 
@@ -45,7 +43,7 @@ module controller #(
             consumer_if.write_ready <= 1'b0;
 
             current_consumer <= '{default: '0};
-            controller_state <= '{default: '0};
+            controller_state <= '{default: IDLE};
 
             channel_serving_consumer <= '{default: '0};
         end else begin 

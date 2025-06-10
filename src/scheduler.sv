@@ -13,6 +13,8 @@
 //   the same control flow at once.
 // > Technically, different instructions can branch to different PCs, requiring "branch divergence." In
 //   this minimal implementation, we assume no branch divergence (naive approach for simplicity)
+
+
 module scheduler #(
     parameter THREADS_PER_BLOCK = 4
 ) (
@@ -37,16 +39,10 @@ module scheduler #(
     output logic [2:0] core_state,
     output logic done
 );
+
+    import core_states_pkg::*;
+
     logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
-    
-    localparam IDLE = 3'b000, // Waiting to start
-        FETCH = 3'b001,       // Fetch instructions from program memory
-        DECODE = 3'b010,      // Decode instructions into control signals
-        REQUEST = 3'b011,     // Request data from registers or memory
-        WAIT = 3'b100,        // Wait for response from memory if necessary
-        EXECUTE = 3'b101,     // Execute ALU and PC calculations
-        UPDATE = 3'b110,      // Update registers, NZP, and PC
-        DONE = 3'b111;        // Done executing this block
     
     always @(posedge clk) begin 
         if (reset) begin

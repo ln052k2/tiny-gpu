@@ -5,6 +5,7 @@
 // > Handles asynchronous memory load and store operations and waits for response
 // > Each thread in each core has it's own LSU
 // > LDR, STR instructions are executed here
+
 module lsu (
     input wire clk,
     input wire reset,
@@ -36,7 +37,8 @@ module lsu (
     output logic [1:0] lsu_state,
     output logic [7:0] lsu_out
 );
-    localparam IDLE = 2'b00, REQUESTING = 2'b01, WAITING = 2'b10, DONE = 2'b11;
+
+import lsu_states_pkg::*;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -53,7 +55,7 @@ module lsu (
                 case (lsu_state)
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == 3'b011) begin 
+                        if (core_state == core_states_pkg::REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -71,7 +73,7 @@ module lsu (
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == 3'b110) begin 
+                        if (core_state == core_states_pkg::UPDATE) begin 
                             lsu_state <= IDLE;
                         end
                     end
@@ -83,7 +85,7 @@ module lsu (
                 case (lsu_state)
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == 3'b011) begin 
+                        if (core_state == core_states_pkg::REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -101,7 +103,7 @@ module lsu (
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == 3'b110) begin 
+                        if (core_state == core_states_pkg::UPDATE) begin 
                             lsu_state <= IDLE;
                         end
                     end

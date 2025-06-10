@@ -4,6 +4,7 @@
 // REGISTER FILE
 // > Each thread within each core has it's own register file with 13 free registers and 3 read-only registers
 // > Read-only registers hold the familiar %blockIdx, %blockDim, and %threadIdx values critical to SIMD
+
 module registers #(
     parameter THREADS_PER_BLOCK = 4,
     parameter THREAD_ID = 0,
@@ -37,9 +38,12 @@ module registers #(
     output logic [7:0] rs,
     output logic [7:0] rt
 );
-    localparam ARITHMETIC = 2'b00,
+
+    typedef enum logic [1:0] {
+        ARITHMETIC = 2'b00,
         MEMORY = 2'b01,
-        CONSTANT = 2'b10;
+        CONSTANT = 2'b10
+    } optype_e;
 
     // 16 registers per thread (13 free registers and 3 read-only registers)
     logic [7:0] registers[15:0];
@@ -72,13 +76,13 @@ module registers #(
             registers[13] <= block_id; // Update the block_id when a new block is issued from dispatcher
             
             // Fill rs/rt when core_state = REQUEST
-            if (core_state == 3'b011) begin 
+            if (core_state == core_states_pkg::REQUEST) begin 
                 rs <= registers[decoded_rs_address];
                 rt <= registers[decoded_rt_address];
             end
 
             // Store rd when core_state = UPDATE
-            if (core_state == 3'b110) begin 
+            if (core_state == core_states_pkg::UPDATE) begin 
                 // Only allow writing to R0 - R12
                 if (decoded_reg_write_enable && decoded_rd_address < 13) begin
                     case (decoded_reg_input_mux)
