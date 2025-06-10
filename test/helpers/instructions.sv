@@ -49,7 +49,7 @@ endclass
 class InstrCoverage;
     instr_fields_t f;
 
-    covergroup cg @(posedge clk);
+    covergroup cg;
         coverpoint f.opcode {
             bins nop    = {4'b0000};
             bins br     = {4'b0001};
@@ -59,7 +59,7 @@ class InstrCoverage;
             bins div    = {4'b0110};
             bins ldr    = {4'b0111};
             bins str    = {4'b1000};
-            bins const  = {4'b1001};
+            bins constant = {4'b1001};
             bins ret    = {4'b1111};
         }
 

@@ -111,16 +111,25 @@ module test_generic;
 
     initial begin
         instr_fields_t instr;
-        instr = new();
-        // Fill program memory with randomized instructions
-        for (int i = 0; i < PROGRAM_LENGTH; i++) begin
-            // Randomize fields and get encoded instruction
-            prog[i] = instr.generate_instr();
+        InstrCoverage coverage;
 
-            // Optional: print for debug
-            instr.print_instr();
-            $display("Encoded prog[%0d] = %h", i, prog[i]);
+        initial begin
+            instr = new();
+            coverage = new();
+
+            for (int i = 0; i < PROGRAM_LENGTH; i++) begin
+                // Randomize fields and get encoded instruction
+                prog[i] = instr.generate_instr();
+
+                // Sample the coverage for this randomized instruction
+                coverage.sample(instr);
+
+                // Optional: print for debug
+                instr.print_instr();
+                $display("Encoded prog[%0d] = %h", i, prog[i]);
+            end
         end
+
 
         cycles = 0;
         reset = 1;
