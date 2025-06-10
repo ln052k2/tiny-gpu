@@ -108,25 +108,24 @@ module test_generic;
         end
     endtask
 
-
+    import instruction_pkg::*;
     instr_fields_t instr;
     InstrCoverage coverage;
-    instr = new();
-    coverage = new();
 
     initial begin
+        instr = new();
+        coverage = new();
+        // Fill program memory with randomized instructions
         for (int i = 0; i < PROGRAM_LENGTH; i++) begin
             // Randomize fields and get encoded instruction
             prog[i] = instr.generate_instr();
-
-            // Sample the coverage for this randomized instruction
             coverage.sample(instr);
 
-            // Optional: print for debug
             instr.print_instr();
             $display("Encoded prog[%0d] = %h", i, prog[i]);
         end
 
+        $display()
 
         cycles = 0;
         reset = 1;
