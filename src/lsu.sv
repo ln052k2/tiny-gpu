@@ -34,11 +34,11 @@ module lsu (
         if (reset) begin
             lsu_state <= IDLE;
             lsu_out <= 0;
-            mem_if.read_valid <= 0;
-            mem_if.read_address <= 0;
-            mem_if.write_valid <= 0;
-            mem_if.write_address <= 0;
-            mem_if.write_data <= 0;
+            mem_if.read_valid <= 1'b0;
+            mem_if.read_address[0] <= 8'b0;
+            mem_if.write_valid <= 1'b0;
+            mem_if.write_address[0] <= 8'b0;
+            mem_if.write_data[0] <= 8'b0;
         end else if (enable) begin
             // If memory read enable is triggered (LDR instruction)
             if (decoded_mem_read_enable) begin 
@@ -51,13 +51,13 @@ module lsu (
                     end
                     REQUESTING: begin 
                         mem_if.read_valid <= 1;
-                        mem_if.read_address <= rs;
+                        mem_if.read_address[0] <= rs;
                         lsu_state <= WAITING;
                     end
                     WAITING: begin
                         if (mem_if.read_ready == 1) begin
                             mem_if.read_valid <= 0;
-                            lsu_out <= mem_if.read_data;
+                            lsu_out <= mem_if.read_data[0];
                             lsu_state <= DONE;
                         end
                     end
@@ -81,8 +81,8 @@ module lsu (
                     end
                     REQUESTING: begin 
                         mem_if.write_valid <= 1;
-                        mem_if.write_address <= rs;
-                        mem_if.write_data <= rt;
+                        mem_if.write_address[0] <= rs;
+                        mem_if.write_data[0] <= rt;
                         lsu_state <= WAITING;
                     end
                     WAITING: begin

@@ -145,10 +145,10 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_if(lsu_mem_if[i]),
+                .mem_if(lsu_mem_if),
                 .rs(rs[i]),
                 .rt(rt[i]),
-                .lsu_state(lsu_state),
+                .lsu_state(lsu_state[i]),
                 .lsu_out(lsu_out[i])
             );
 

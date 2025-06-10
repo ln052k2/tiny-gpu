@@ -59,12 +59,6 @@ module gpu #(
         .CHANNELS(NUM_FETCHERS)
     ) fetcher_if();
 
-    mem_if #(
-        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-        .CHANNELS(1)
-    ) core_fetcher_if [NUM_CORES] (); // interface for each core's fetcher
-    
     // Device Control Register
     dcr dcr_instance (
         .clk(clk),
@@ -133,10 +127,11 @@ module gpu #(
                 .CHANNELS(THREADS_PER_BLOCK)
             ) core_lsu_if();
 
-            // assign core_fetcher_if.read_valid[0]   = fetcher_if.read_valid[i];
-            // assign core_fetcher_if.read_address[0] = fetcher_if.read_address[i];
-            // assign fetcher_if.read_ready[i]     = core_fetcher_if.read_ready[0];
-            // assign fetcher_if.read_data[i]      = core_fetcher_if.read_data[0];
+            mem_if #(
+                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+                .CHANNELS(1)
+            ) core_fetcher_if();
 
             // Pass through signals between LSUs and data memory controller
             genvar j;
@@ -156,17 +151,19 @@ module gpu #(
                 end
             end
 
-            // Assign each core's output into the combined fetcher_if input
-            assign fetcher_if.read_valid[i]       = core_fetcher_if[i].read_valid[0];
-            assign fetcher_if.read_address[i]     = core_fetcher_if[i].read_address[0];
-            assign fetcher_if.write_valid[i]      = core_fetcher_if[i].write_valid[0];
-            assign fetcher_if.write_address[i]    = core_fetcher_if[i].write_address[0];
-            assign fetcher_if.write_data[i]       = core_fetcher_if[i].write_data[0];
+            always_ff @(posedge clk) begin
+                // Core to fetcher
+                fetcher_if.read_valid[i]     <= core_fetcher_if.read_valid[0];
+                fetcher_if.read_address[i]   <= core_fetcher_if.read_address[0];
+                fetcher_if.write_valid[i]    <= core_fetcher_if.write_valid[0];
+                fetcher_if.write_address[i]  <= core_fetcher_if.write_address[0];
+                fetcher_if.write_data[i]     <= core_fetcher_if.write_data[0];
 
-            // Distribute shared memory outputs back to core interfaces
-            assign core_fetcher_if[i].read_ready[0]  = fetcher_if.read_ready[i];
-            assign core_fetcher_if[i].read_data[0]   = fetcher_if.read_data[i];
-            assign core_fetcher_if[i].write_ready[0] = fetcher_if.write_ready[i];
+                // Fetcher to core
+                core_fetcher_if.read_ready[0]  <= fetcher_if.read_ready[i];
+                core_fetcher_if.read_data[0]   <= fetcher_if.read_data[i];
+                core_fetcher_if.write_ready[0] <= fetcher_if.write_ready[i];
+            end
 
             // Compute Core
             core #(
@@ -183,7 +180,7 @@ module gpu #(
                 .block_id(core_block_id[i]),
                 .thread_count(core_thread_count[i]),
 
-                .program_mem_if(core_fetcher_if[i]),                
+                .program_mem_if(core_fetcher_if),                
                 .data_mem_if(core_lsu_if)
             );
         end
