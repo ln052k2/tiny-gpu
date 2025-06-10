@@ -30,6 +30,7 @@ module scheduler #(
     // Memory Access State
     input logic [2:0] fetcher_state,
     input wire [1:0] lsu_state [THREADS_PER_BLOCK-1:0],
+    input wire alu_busy [THREADS_PER_BLOCK-1:0],
 
     // Current & Next PC
     output logic [7:0] current_pc,
@@ -42,8 +43,8 @@ module scheduler #(
 
     import core_states_pkg::*;
 
-    logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
-    
+    logic any_component_waiting; // Flag to indicate if any LSU is waiting for a response
+
     always @(posedge clk) begin 
         if (reset) begin
             current_pc <= 0;
@@ -74,23 +75,36 @@ module scheduler #(
                 end
                 WAIT: begin
                     // Wait for all LSUs to finish their request before continuing
-                    any_lsu_waiting = 1'b0;
+                    any_component_waiting = 1'b0;
                     for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
                         // Make sure no lsu_state = REQUESTING or WAITING
-                        if (lsu_state[i] == 2'b01 || lsu_state[i] == 2'b10) begin
-                            any_lsu_waiting = 1'b1;
+                        if (lsu_state[i] == lsu_states_pkg::REQUESTING || lsu_state[i] == lsu_states_pkg::WAITING) begin
+                            any_component_waiting = 1'b1;
                             break;
                         end
                     end
 
                     // If no LSU is waiting for a response, move onto the next stage
-                    if (!any_lsu_waiting) begin
+                    if (!any_component_waiting) begin
                         core_state <= EXECUTE;
                     end
                 end
                 EXECUTE: begin
-                    // Execute is synchronous so we move on after one cycle
-                    core_state <= UPDATE;
+                    // Execute is no longer synchronous so we don't move on after one cycle!
+                    // Wait for all LSUs to finish their request before continuing
+                    any_component_waiting = 1'b0;
+                    for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
+                        // Make sure no lsu_state = REQUESTING or WAITING
+                        if (alu_busy[i]) begin
+                            any_component_waiting = 1'b1;
+                            break;
+                        end
+                    end
+
+                    // If no ALU is still processing, continue!
+                    if (!any_component_waiting) begin
+                        core_state <= UPDATE;
+                    end
                 end
                 UPDATE: begin 
                     if (decoded_ret) begin 
