@@ -69,14 +69,7 @@ module test_generic;
         .CHANNELS(DATA_MEM_CHANNELS)
     ) data_memory;
 
-    // Randomly generate instructions
-    // Assumes all opcodes legal
-    logic [15:0] prog [0:PROGRAM_LENGTH-1];
-    for (int i = 0; i < PROGRAM_LENGTH; i++) begin
-        prog[i] = instruction_pkg::generate_instr();
-        $display("Instruction %0d = %b", i, prog[i]);
-    end
-
+    logic [15:0] prog [0:PROGRAM_LENGTH-1] = '{default:0};
     logic [DATA_MEM_DATA_BITS-1:0] data [0:15] = '{default: 0};
 
     // Instantiate DUT
@@ -115,7 +108,20 @@ module test_generic;
         end
     endtask
 
+
     initial begin
+        instr_fields_t instr;
+        instr = new();
+        // Fill program memory with randomized instructions
+        for (int i = 0; i < PROGRAM_LENGTH; i++) begin
+            // Randomize fields and get encoded instruction
+            prog[i] = instr.generate_instr();
+
+            // Optional: print for debug
+            instr.print_instr();
+            $display("Encoded prog[%0d] = %h", i, prog[i]);
+        end
+
         cycles = 0;
         reset = 1;
         @(posedge clk);

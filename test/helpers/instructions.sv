@@ -1,7 +1,6 @@
 package instruction_pkg;
 
-// Instruction field struct
-typedef struct packed {
+class instr_fields_t;
     randc logic [3:0] opcode;
     rand logic [3:0] rd;
     rand logic [3:0] rs;
@@ -14,36 +13,37 @@ typedef struct packed {
         opcode inside {4'b0000, 4'b0001, 4'b0010, 4'b0011, 4'b0100, 4'b0101, 
                        4'b0110, 4'b0111, 4'b1000, 4'b1001, 4'b1111};
     }
-} instr_fields_t;
 
+    // Encode instruction fields into 16-bit instruction
+    function logic [15:0] encode();
+        case (opcode)
+            4'b0000: return 16'b0000_0000_0000_0000; // NOP
+            4'b0001: return {4'b0001, nzp, imm8};    // BRnzp
+            4'b0010: return {4'b0010, 4'b0000, rs, rt}; // CMP
+            4'b0011, 4'b0100, 4'b0101, 4'b0110:
+                return {opcode, rd, rs, rt};          // ADD, SUB, MUL, DIV
+            4'b0111: return {opcode, rd, rs, 4'b0000}; // LDR
+            4'b1000: return {opcode, 4'b0000, rs, rt}; // STR
+            4'b1001: return {opcode, rd, imm8};      // CONST
+            4'b1111: return 16'b1111_0000_0000_0000; // RET
+            default: return 16'hDEAD;
+        endcase
+    endfunction
 
-// Instruction encoder function
-function logic [15:0] encode(instr_fields_t f);
-    case (f.opcode)
-        4'b0000: return 16'b0000_0000_0000_0000; // NOP
-        4'b0001: return {4'b0001, f.nzp, f.imm8}; // BRnzp
-        4'b0010: return {4'b0010, 4'b0000, f.rs, f.rt}; // CMP
-        4'b0011, 4'b0100, 4'b0101, 4'b0110:
-            return {f.opcode, f.rd, f.rs, f.rt}; // ADD, SUB, MUL, DIV
-        4'b0111: return {f.opcode, f.rd, f.rs, 4'b0000}; // LDR
-        4'b1000: return {f.opcode, 4'b0000, f.rs, f.rt}; // STR
-        4'b1001: return {f.opcode, f.rd, f.imm8}; // CONST
-        4'b1111: return 16'b1111_0000_0000_0000; // RET
-        default: return 16'hDEAD;
-    endcase
-endfunction
+    // Randomize fields and return encoded instruction
+    function logic [15:0] generate_instr();
+        if (!this.randomize())
+            $fatal("Failed to randomize instruction fields");
+        return encode();
+    endfunction
 
-function instr_fields_t generate_instr();
-    instr_fields_t f;
-    assert(f.randomize()) else
-        $fatal("Failed to randomize instruction fields");
-    return encode(f);
-endfunction
+    // Print human-readable fields
+    task print_instr();
+        $display("OP: %b RD: %0d RS: %0d RT: %0d IMM: %0d NZP: %b",
+                opcode, rd, rs, rt, imm8, nzp);
+    endtask
+endclass
 
-task automatic print_instr(instr_fields_t f);
-    $display("OP: %b RD: %0d RS: %0d RT: %0d IMM: %0d NZP: %b",
-            f.opcode, f.rd, f.rs, f.rt, f.imm8, f.nzp);
-endtask
 
 // Instruction coverage group class
 class InstrCoverage;
