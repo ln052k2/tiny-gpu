@@ -109,25 +109,22 @@ module test_generic;
     endtask
 
 
+    instr_fields_t instr;
+    InstrCoverage coverage;
+    instr = new();
+    coverage = new();
+
     initial begin
-        instr_fields_t instr;
-        InstrCoverage coverage;
+        for (int i = 0; i < PROGRAM_LENGTH; i++) begin
+            // Randomize fields and get encoded instruction
+            prog[i] = instr.generate_instr();
 
-        initial begin
-            instr = new();
-            coverage = new();
+            // Sample the coverage for this randomized instruction
+            coverage.sample(instr);
 
-            for (int i = 0; i < PROGRAM_LENGTH; i++) begin
-                // Randomize fields and get encoded instruction
-                prog[i] = instr.generate_instr();
-
-                // Sample the coverage for this randomized instruction
-                coverage.sample(instr);
-
-                // Optional: print for debug
-                instr.print_instr();
-                $display("Encoded prog[%0d] = %h", i, prog[i]);
-            end
+            // Optional: print for debug
+            instr.print_instr();
+            $display("Encoded prog[%0d] = %h", i, prog[i]);
         end
 
 
