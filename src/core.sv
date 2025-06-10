@@ -134,6 +134,24 @@ module core #(
             );
 
             // LSU
+            mem_if #(
+                .ADDR_BITS(DATA_MEM_ADDR_BITS),
+                .DATA_BITS(DATA_MEM_DATA_BITS),
+                .CHANNELS(1)
+            ) core_lsu_if();
+
+            always_ff @(posedge clk) begin
+                data_mem_if.read_valid[i]      <= core_lsu_if.read_valid[0];
+                data_mem_if.read_address[i]    <= core_lsu_if.read_address[0];
+                data_mem_if.write_valid[i]     <= core_lsu_if.write_valid[0];
+                data_mem_if.write_address[i]   <= core_lsu_if.write_address[0];
+                data_mem_if.write_data[i]      <= core_lsu_if.write_data[0];
+                core_lsu_if.read_ready[0]      <= data_mem_if.read_ready[i];
+                core_lsu_if.read_data[0]       <= data_mem_if.read_data[i];
+                core_lsu_if.write_ready[0]     <= data_mem_if.write_ready[i];
+            end
+
+
             lsu lsu_instance (
                 .clk(clk),
                 .reset(reset),
@@ -141,14 +159,7 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_read_valid(data_mem_if.read_valid[i]),
-                .mem_read_address(data_mem_if.read_address[i]),
-                .mem_read_ready(data_mem_if.read_ready[i]),
-                .mem_read_data(data_mem_if.read_data[i]),
-                .mem_write_valid(data_mem_if.write_valid[i]),
-                .mem_write_address(data_mem_if.write_address[i]),
-                .mem_write_data(data_mem_if.write_data[i]),
-                .mem_write_ready(data_mem_if.write_ready[i]),
+                .mem_if(core_lsu_if),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
