@@ -30,7 +30,7 @@ module core #(
     input logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data,
 
     // Data Memory
-    mem_if.mem data_mem_if;
+    mem_if.mem data_mem_if
 );
     // State
     logic [2:0] core_state;
@@ -138,6 +138,12 @@ module core #(
                 .alu_out(alu_out[i])
             );
 
+            mem_if #(
+                .ADDR_BITS(8),
+                .DATA_BITS(8),
+                .CHANNELS(1)
+            ) lsu_if ();
+
             // LSU
             lsu lsu_instance (
                 .clk(clk),
@@ -146,14 +152,7 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_read_valid(data_mem_if.read_valid[i]),
-                .mem_read_address(data_mem_if.read_address[i]),
-                .mem_read_ready(data_mem_if.read_ready[i]),
-                .mem_read_data(data_mem_if.read_data[i]),
-                .mem_write_valid(data_mem_if.write_valid[i]),
-                .mem_write_address(data_mem_if.write_address[i]),
-                .mem_write_data(data_mem_if.write_data[i]),
-                .mem_write_ready(data_mem_if.write_ready[i]),
+                .mem_if(lsu_if),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
