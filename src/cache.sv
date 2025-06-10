@@ -33,13 +33,14 @@ module cache #(
         grant_mask[current_grant] = 1'b1;
     end
 
+    int candidate;
     // Round-robin arbitration
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             current_grant <= 0;
         end else begin
             for (int i = 1; i <= CHANNELS; i++) begin
-                int candidate = (current_grant + i) % CHANNELS;
+                candidate = (current_grant + i) % CHANNELS;
                 if (cache_if.read_valid[candidate] || cache_if.write_valid[candidate]) begin
                     current_grant <= candidate;
                     break;
