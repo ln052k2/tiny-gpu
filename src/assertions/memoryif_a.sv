@@ -5,7 +5,7 @@ module mem_if_a #(
 )(
     input logic clk,
     input logic reset,
-    mem_if.mem mem
+    mem_if.mem mem_if
 );
 
     // Properties and Assertions
@@ -51,6 +51,7 @@ module mem_if_a #(
             write_valid_drop_a: assert property (write_valid_drop_p)
                 else $error("write_valid should be dropped after write_ready");
 
+	end
     endgenerate
 
 endmodule
