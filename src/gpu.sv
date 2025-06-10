@@ -127,18 +127,6 @@ module gpu #(
                 .CHANNELS(THREADS_PER_BLOCK)
             ) core_lsu_if();
 
-            mem_if #(
-                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-                .CHANNELS(1)
-            ) core_fetcher_if();
-
-            // Messy workaround -- is it worth it???
-            assign core_fetcher_if.read_valid[0]   = fetcher_if.read_valid[i];
-            assign core_fetcher_if.read_address[0] = fetcher_if.read_address[i];
-            assign fetcher_if.read_ready[i]             = core_fetcher_if.read_ready[0];
-            assign fetcher_if.read_data[i]              = core_fetcher_if.read_data[0];
-
             // Pass through signals between LSUs and data memory controller
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
