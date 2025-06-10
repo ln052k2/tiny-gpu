@@ -17,3 +17,12 @@
 * Write through, direct mapped
 * Cache hits served instantly
 * Cache misses trigger memory read -> requesting LSU is stalled until completion
+
+[GPU cores]
+     lsu_if (multi-channel)
+     [cache]   ← arbitration + tag/data store + mem_if interface
+  data_mem_if (external memory)
+
+* Cache requests are serialized, not served in parallel
+* Other requests are stalled until arbitration grants them access
+* BUT fixed priority arbitration, and fetcher always fetches in blocks

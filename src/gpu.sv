@@ -69,6 +69,25 @@ module gpu #(
         .thread_count(thread_count)
     );
 
+    // Global cache services all cores
+    mem_if #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(THREADS_PER_BLOCK)
+    ) global_cache_if();
+
+    cache #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(NUM_CORES),
+        .CACHE_LINES(64)
+    ) global_cache (
+        .clk(clk),
+        .reset(reset),
+        .cache_if(global_cache_if),
+        .data_mem_if(data_mem_if)
+    );
+    
     // Data Memory Controller
     controller #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
@@ -79,7 +98,7 @@ module gpu #(
         .clk(clk),
         .reset(reset),
 
-        .consumer_if(lsu_if),
+        .consumer_if(global_cache_if),
         .mem_if(data_mem_if)
     );
 
@@ -138,16 +157,16 @@ module gpu #(
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
                 localparam lsu_index = i * THREADS_PER_BLOCK + j;
                 always_ff @(posedge clk) begin 
-                    lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
-                    lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
+                    global_cache_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
+                    global_cache_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
 
-                    lsu_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
-                    lsu_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
-                    lsu_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
+                    global_cache_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
+                    global_cache_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
+                    global_cache_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
                     
-                    core_lsu_if.read_ready[j] <= lsu_if.read_ready[lsu_index];
-                    core_lsu_if.read_data[j] <= lsu_if.read_data[lsu_index];
-                    core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
+                    core_lsu_if.read_ready[j] <= global_cache_if.read_ready[lsu_index];
+                    core_lsu_if.read_data[j] <= global_cache_if.read_data[lsu_index];
+                    core_lsu_if.write_ready[j] <= global_cache_if.write_ready[lsu_index];
                 end
             end
             

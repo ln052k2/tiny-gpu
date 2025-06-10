@@ -28,17 +28,19 @@ cache_line_t cache_mem[CACHE_LINES];
 // Arbitration
 logic [$clog2(CHANNELS)-1:0] current_grant;
 logic [CHANNELS-1:0] grant_mask;
-always_comb begin
+always_comb begin // onehot
     grant_mask = '0;
     grant_mask[current_grant] = 1'b1;
 end
 
 int candidate;
-// Round-robin arbitration
+// Round-robin arbitration, since multiple LSU requesters, but only one global mem controller
+// Only one thread is serviced at a time
 always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
         current_grant <= 0;
     end else begin
+        // Grants to first thread with a valid read/write request
         for (int i = 1; i <= CHANNELS; i++) begin
             candidate = (current_grant + i) % CHANNELS;
             if (cache_if.read_valid[candidate] || cache_if.write_valid[candidate]) begin
@@ -55,6 +57,7 @@ logic [LINE_INDEX_BITS-1:0] index;
 logic [TAG_BITS-1:0] tag;
 cache_line_t line;
 
+
 assign addr = cache_if.read_valid[current_grant] ? cache_if.read_address[current_grant] :
                 cache_if.write_valid[current_grant] ? cache_if.write_address[current_grant] :
                 '0;
@@ -63,12 +66,32 @@ assign tag = addr[ADDR_BITS-1:LINE_INDEX_BITS];
 
 always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
+        current_grant <= 0;
         for (int i = 0; i < CACHE_LINES; i++) begin
             cache_mem[i].valid <= 1'b0;
             cache_mem[i].tag <= '0;
             cache_mem[i].data <= '0;
         end
+        // Reset ready signals
+        for (int i = 0; i < CHANNELS; i++) begin
+            cache_if.read_ready[i] <= 1'b0;
+            cache_if.write_ready[i] <= 1'b0;
+            cache_if.read_data[i] <= '0;
+        end
+        data_mem_if.read_valid[0] <= 1'b0;
+        data_mem_if.write_valid[0] <= 1'b0;
     end else begin
+        // Default assignments
+        for (int i = 0; i < CHANNELS; i++) begin
+            if (i != current_grant) begin
+                cache_if.read_ready[i] <= 1'b0;
+                cache_if.write_ready[i] <= 1'b0;
+                cache_if.read_data[i] <= '0;
+            end
+        end
+
+        data_mem_if.read_valid[0] <= 1'b0;
+        data_mem_if.write_valid[0] <= 1'b0;
         line = cache_mem[index];
 
         if (cache_if.read_valid[current_grant]) begin
@@ -113,17 +136,6 @@ always_ff @(posedge clk or posedge reset) begin
             end
         end else begin
             cache_if.write_ready[current_grant] <= 1'b0;
-        end
-    end
-end
-
-// Clear other channels' ready signals
-always_comb begin
-    for (int i = 0; i < CHANNELS; i++) begin
-        if (i != current_grant) begin
-            cache_if.read_ready[i] = 1'b0;
-            cache_if.write_ready[i] = 1'b0;
-            cache_if.read_data[i] = '0;
         end
     end
 end
