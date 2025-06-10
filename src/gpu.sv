@@ -137,7 +137,7 @@ module gpu #(
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
                 localparam lsu_index = i * THREADS_PER_BLOCK + j;
-                always @(posedge clk) begin 
+                always_ff @(posedge clk) begin 
                     lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
                     lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
 
@@ -150,7 +150,7 @@ module gpu #(
                     core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
                 end
             end
-
+            
             always_ff @(posedge clk) begin
                 // Core to fetcher
                 fetcher_if.read_valid[i]     <= core_fetcher_if.read_valid[0];
