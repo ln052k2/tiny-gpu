@@ -114,12 +114,6 @@ module core #(
         .done(done)
     );
 
-    mem_if #(
-        .ADDR_BITS(8),
-        .DATA_BITS(8),
-        .CHANNELS(1)
-    ) lsu_mem_if [THREADS_PER_BLOCK] ();
-
     // Dedicated ALU, LSU, registers, & PC unit for each thread this core has capacity for
     genvar i;
     generate
@@ -138,6 +132,12 @@ module core #(
             );
 
             // LSU
+            mem_if #(
+                .ADDR_BITS(8),
+                .DATA_BITS(8),
+                .CHANNELS(1)
+            ) lsu_mem_if ();
+            
             lsu lsu_instance (
                 .clk(clk),
                 .reset(reset),
@@ -148,7 +148,7 @@ module core #(
                 .mem_if(lsu_mem_if[i]),
                 .rs(rs[i]),
                 .rt(rt[i]),
-                .lsu_state(lsu_state[i]),
+                .lsu_state(lsu_state),
                 .lsu_out(lsu_out[i])
             );
 

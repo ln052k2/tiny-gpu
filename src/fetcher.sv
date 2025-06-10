@@ -29,7 +29,7 @@ module fetcher #(
         if (reset) begin
             fetcher_state <= IDLE;
             mem_if.read_valid <= 0;
-            mem_if.read_address <= 0;
+            mem_if.read_address[0] <= {PROGRAM_MEM_ADDR_BITS{1'b0}};
             instruction <= {PROGRAM_MEM_DATA_BITS{1'b0}};
         end else begin
             case (fetcher_state)
@@ -38,14 +38,14 @@ module fetcher #(
                     if (core_state == 3'b001) begin
                         fetcher_state <= FETCHING;
                         mem_if.read_valid <= 1;
-                        mem_if.read_address <= current_pc;
+                        mem_if.read_address[0] <= current_pc;
                     end
                 end
                 FETCHING: begin
                     // Wait for response from program memory
                     if (mem_if.read_ready) begin
                         fetcher_state <= FETCHED;
-                        instruction <= mem_if.read_data; // Store the instruction when received
+                        instruction <= mem_if.read_data[0]; // Store the instruction when received
                         mem_if.read_valid <= 0;
                     end
                 end
