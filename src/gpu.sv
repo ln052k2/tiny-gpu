@@ -127,6 +127,12 @@ module gpu #(
                 .CHANNELS(THREADS_PER_BLOCK)
             ) core_lsu_if();
 
+            mem_if #(
+                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+                .CHANNELS(1)
+            ) core_fetcher_if();
+
             // Pass through signals between LSUs and data memory controller
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
@@ -144,7 +150,20 @@ module gpu #(
                     core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
                 end
             end
+            
+            always_ff @(posedge clk) begin
+                // Core to fetcher
+                fetcher_if.read_valid[i]     <= core_fetcher_if.read_valid[0];
+                fetcher_if.read_address[i]   <= core_fetcher_if.read_address[0];
+                fetcher_if.write_valid[i]    <= core_fetcher_if.write_valid[0];
+                fetcher_if.write_address[i]  <= core_fetcher_if.write_address[0];
+                fetcher_if.write_data[i]     <= core_fetcher_if.write_data[0];
 
+                // Fetcher to core
+                core_fetcher_if.read_ready[0]  <= fetcher_if.read_ready[i];
+                core_fetcher_if.read_data[0]   <= fetcher_if.read_data[i];
+                core_fetcher_if.write_ready[0] <= fetcher_if.write_ready[i];
+            end
 
             // Compute Core
             core #(
@@ -160,12 +179,8 @@ module gpu #(
                 .done(core_done[i]),
                 .block_id(core_block_id[i]),
                 .thread_count(core_thread_count[i]),
-                
-                .program_mem_read_valid(fetcher_if.read_valid[i]),
-                .program_mem_read_address(fetcher_if.read_address[i]),
-                .program_mem_read_ready(fetcher_if.read_ready[i]),
-                .program_mem_read_data(fetcher_if.read_data[i]),
 
+                .program_mem_if(core_fetcher_if),                
                 .data_mem_if(core_lsu_if)
             );
         end

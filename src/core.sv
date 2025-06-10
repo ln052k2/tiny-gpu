@@ -24,10 +24,7 @@ module core #(
     input wire [$clog2(THREADS_PER_BLOCK):0] thread_count,
 
     // Program Memory
-    output logic program_mem_read_valid,
-    output logic [PROGRAM_MEM_ADDR_BITS-1:0] program_mem_read_address,
-    input logic program_mem_read_ready,
-    input logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data,
+    mem_if.mem program_mem_if,
 
     // Data Memory
     mem_if.mem data_mem_if
@@ -138,12 +135,6 @@ module core #(
                 .alu_out(alu_out[i])
             );
 
-            mem_if #(
-                .ADDR_BITS(8),
-                .DATA_BITS(8),
-                .CHANNELS(1)
-            ) lsu_if ();
-
             // LSU
             lsu lsu_instance (
                 .clk(clk),
@@ -152,7 +143,14 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_if(lsu_if),
+                .mem_read_valid(data_mem_if.read_valid[i]),
+                .mem_read_address(data_mem_if.read_address[i]),
+                .mem_read_ready(data_mem_if.read_ready[i]),
+                .mem_read_data(data_mem_if.read_data[i]),
+                .mem_write_valid(data_mem_if.write_valid[i]),
+                .mem_write_address(data_mem_if.write_address[i]),
+                .mem_write_data(data_mem_if.write_data[i]),
+                .mem_write_ready(data_mem_if.write_ready[i]),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),

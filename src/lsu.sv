@@ -22,7 +22,14 @@ module lsu (
     input logic [7:0] rt,
 
     // Data Memory
-    mem_if.mem mem_if,
+    output logic mem_read_valid,
+    output logic [7:0] mem_read_address,
+    input logic mem_read_ready,
+    input logic [7:0] mem_read_data,
+    output logic mem_write_valid,
+    output logic [7:0] mem_write_address,
+    output logic [7:0] mem_write_data,
+    input logic mem_write_ready,
 
     // LSU Outputs
     output logic [1:0] lsu_state,
@@ -34,11 +41,11 @@ module lsu (
         if (reset) begin
             lsu_state <= IDLE;
             lsu_out <= 0;
-            mem_if.read_valid <= 0;
-            mem_if.read_address[0] <= 0;
-            mem_if.write_valid <= 0;
-            mem_if.write_address[0] <= 0;
-            mem_if.write_data[0] <= 0;
+            mem_read_valid <= 0;
+            mem_read_address <= 0;
+            mem_write_valid <= 0;
+            mem_write_address <= 0;
+            mem_write_data <= 0;
         end else if (enable) begin
             // If memory read enable is triggered (LDR instruction)
             if (decoded_mem_read_enable) begin 
@@ -50,14 +57,14 @@ module lsu (
                         end
                     end
                     REQUESTING: begin 
-                        mem_if.read_valid <= 1;
-                        mem_if.read_address[0] <= rs;
+                        mem_read_valid <= 1;
+                        mem_read_address <= rs;
                         lsu_state <= WAITING;
                     end
                     WAITING: begin
-                        if (mem_if.read_ready == 1) begin
-                            mem_if.read_valid <= 0;
-                            lsu_out <= mem_if.read_data[0];
+                        if (mem_read_ready == 1) begin
+                            mem_read_valid <= 0;
+                            lsu_out <= mem_read_data;
                             lsu_state <= DONE;
                         end
                     end
@@ -80,14 +87,14 @@ module lsu (
                         end
                     end
                     REQUESTING: begin 
-                        mem_if.write_valid <= 1;
-                        mem_if.write_address[0] <= rs;
-                        mem_if.write_data[0] <= rt;
+                        mem_write_valid <= 1;
+                        mem_write_address <= rs;
+                        mem_write_data <= rt;
                         lsu_state <= WAITING;
                     end
                     WAITING: begin
-                        if (mem_if.write_ready) begin
-                            mem_if.write_valid <= 0;
+                        if (mem_write_ready) begin
+                            mem_write_valid <= 0;
                             lsu_state <= DONE;
                         end
                     end
