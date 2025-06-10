@@ -166,14 +166,7 @@ module gpu #(
                 .program_mem_read_ready(fetcher_if.read_ready[i]),
                 .program_mem_read_data(fetcher_if.read_data[i]),
 
-                .data_mem_read_valid(core_lsu_if.read_valid),
-                .data_mem_read_address(core_lsu_if.read_address),
-                .data_mem_read_ready(core_lsu_if.read_ready),
-                .data_mem_read_data(core_lsu_if.read_data),
-                .data_mem_write_valid(core_lsu_if.write_valid),
-                .data_mem_write_address(core_lsu_if.write_address),
-                .data_mem_write_data(core_lsu_if.write_data),
-                .data_mem_write_ready(core_lsu_if.write_ready)
+                .data_mem_if(core_lsu_if)
             );
         end
     endgenerate
