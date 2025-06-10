@@ -121,48 +121,31 @@ module gpu #(
         for (i = 0; i < NUM_CORES; i = i + 1) begin : cores
             // EDA: We create separate signals here to pass to cores because of a requirement
             // by the OpenLane EDA flow (uses Verilog 2005) that prevents slicing the top-level signals
-            mem_if #(
-                .ADDR_BITS(DATA_MEM_ADDR_BITS),
-                .DATA_BITS(DATA_MEM_DATA_BITS),
-                .CHANNELS(THREADS_PER_BLOCK)
-            ) core_lsu_if();
-
-            mem_if #(
-                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-                .CHANNELS(1)
-            ) core_fetcher_if();
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_read_valid;
+            logic [DATA_MEM_ADDR_BITS-1:0] core_lsu_read_address [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_read_ready;
+            logic [DATA_MEM_DATA_BITS-1:0] core_lsu_read_data [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_write_valid;
+            logic [DATA_MEM_ADDR_BITS-1:0] core_lsu_write_address [THREADS_PER_BLOCK-1:0];
+            logic [DATA_MEM_DATA_BITS-1:0] core_lsu_write_data [THREADS_PER_BLOCK-1:0];
+            logic [THREADS_PER_BLOCK-1:0] core_lsu_write_ready;
 
             // Pass through signals between LSUs and data memory controller
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
                 localparam lsu_index = i * THREADS_PER_BLOCK + j;
                 always @(posedge clk) begin 
-                    lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
-                    lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
+                    lsu_read_valid[lsu_index] <= core_lsu_read_valid[j];
+                    lsu_read_address[lsu_index] <= core_lsu_read_address[j];
 
-                    lsu_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
-                    lsu_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
-                    lsu_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
+                    lsu_write_valid[lsu_index] <= core_lsu_write_valid[j];
+                    lsu_write_address[lsu_index] <= core_lsu_write_address[j];
+                    lsu_write_data[lsu_index] <= core_lsu_write_data[j];
                     
-                    core_lsu_if.read_ready[j] <= lsu_if.read_ready[lsu_index];
-                    core_lsu_if.read_data[j] <= lsu_if.read_data[lsu_index];
-                    core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
+                    core_lsu_read_ready[j] <= lsu_read_ready[lsu_index];
+                    core_lsu_read_data[j] <= lsu_read_data[lsu_index];
+                    core_lsu_write_ready[j] <= lsu_write_ready[lsu_index];
                 end
-            end
-
-            always_ff @(posedge clk) begin
-                // Core to fetcher
-                fetcher_if.read_valid[i]     <= core_fetcher_if.read_valid[0];
-                fetcher_if.read_address[i]   <= core_fetcher_if.read_address[0];
-                fetcher_if.write_valid[i]    <= core_fetcher_if.write_valid[0];
-                fetcher_if.write_address[i]  <= core_fetcher_if.write_address[0];
-                fetcher_if.write_data[i]     <= core_fetcher_if.write_data[0];
-
-                // Fetcher to core
-                core_fetcher_if.read_ready[0]  <= fetcher_if.read_ready[i];
-                core_fetcher_if.read_data[0]   <= fetcher_if.read_data[i];
-                core_fetcher_if.write_ready[0] <= fetcher_if.write_ready[i];
             end
 
             // Compute Core
@@ -179,9 +162,20 @@ module gpu #(
                 .done(core_done[i]),
                 .block_id(core_block_id[i]),
                 .thread_count(core_thread_count[i]),
+                
+                .program_mem_read_valid(fetcher_read_valid[i]),
+                .program_mem_read_address(fetcher_read_address[i]),
+                .program_mem_read_ready(fetcher_read_ready[i]),
+                .program_mem_read_data(fetcher_read_data[i]),
 
-                .program_mem_if(core_fetcher_if),                
-                .data_mem_if(core_lsu_if)
+                .data_mem_read_valid(core_lsu_read_valid),
+                .data_mem_read_address(core_lsu_read_address),
+                .data_mem_read_ready(core_lsu_read_ready),
+                .data_mem_read_data(core_lsu_read_data),
+                .data_mem_write_valid(core_lsu_write_valid),
+                .data_mem_write_address(core_lsu_write_address),
+                .data_mem_write_data(core_lsu_write_data),
+                .data_mem_write_ready(core_lsu_write_ready)
             );
         end
     endgenerate

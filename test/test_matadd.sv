@@ -101,11 +101,11 @@ module test_matadd;
         .data_mem_if(data_mem_if)
     );
 
-    // always @(posedge clk) begin
- 	// $display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
-    // 	$display("T=%0t | reset=%b start=%b done=%b | ctrl_we=%b ctrl_data=%0d", 
-    //           $time, reset, start, done, device_control_write_enable, device_control_data);
-    // end
+    always @(posedge clk) begin
+ 	$display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
+    	$display("T=%0t | reset=%b start=%b done=%b | ctrl_we=%b ctrl_data=%0d", 
+              $time, reset, start, done, device_control_write_enable, device_control_data);
+    end
 
     initial begin
         cycles = 0;
@@ -120,7 +120,6 @@ module test_matadd;
 
         // Hook interface signals to class instances
         program_memory = new("program", program_mem_if);
-
         data_memory = new("data", data_mem_if);
 
         // Load program and data memory
