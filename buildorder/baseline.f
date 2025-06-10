@@ -1,0 +1,13 @@
+baseline/alu.sv
+baseline/controller.sv
+baseline/core.sv
+baseline/dcr.sv
+baseline/decoder.sv
+baseline/dispatch.sv
+baseline/fetcher.sv
+baseline/gpu.sv
+baseline/lsu.sv
+baseline/pc.sv
+baseline/registers.sv
+baseline/scheduler.sv
+baseline/memoryif.sv
