@@ -70,10 +70,10 @@ module core #(
         .reset(reset),
         .core_state(core_state),
         .current_pc(current_pc),
-        .mem_read_valid(program_mem_read_valid),
-        .mem_read_address(program_mem_read_address),
-        .mem_read_ready(program_mem_read_ready),
-        .mem_read_data(program_mem_read_data),
+        .mem_read_valid(program_mem_if._read_valid),
+        .mem_read_address(program_mem_if._read_address),
+        .mem_read_ready(program_mem_if._read_ready),
+        .mem_read_data(program_mem_if._read_data),
         .fetcher_state(fetcher_state),
         .instruction(instruction) 
     );
