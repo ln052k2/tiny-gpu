@@ -120,14 +120,14 @@ module core #(
     mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(DATA_MEM_CHANNELS)
+        .CHANNELS(THREADS_PER_BLOCK)
     ) cache_if();
 
     cache #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(THREADS_PER_BLOCK),       // 4
-        .CACHE_LINES(16)                    // You can change this as needed
+        .CHANNELS(THREADS_PER_BLOCK),
+        .CACHE_LINES(16)
     ) cache_instance (
         .clk(clk),
         .reset(reset),
