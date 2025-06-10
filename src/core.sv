@@ -61,6 +61,19 @@ module core #(
     logic decoded_pc_mux;                     // Select source of next PC
     logic decoded_ret;
 
+    mem_if #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(1)
+    ) fetcher_if ();
+
+    always_ff @(posedge clk) begin
+        program_mem_if.read_valid[0]   <= fetcher_if.read_valid;
+        program_mem_if.read_address[0] <= fetcher_if.read_address[0];
+        fetcher_if.read_ready          <= program_mem_if.read_ready[0];
+        fetcher_if.read_data[0]        <= program_mem_if.read_data[0];
+    end
+
     // Fetcher
     fetcher #(
         .PROGRAM_MEM_ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -74,6 +87,9 @@ module core #(
         .mem_read_address(program_mem_if.read_address[0]),
         .mem_read_ready(program_mem_if.read_ready[0]),
         .mem_read_data(program_mem_if.read_data[0]),
+
+        .mem_if(fetcher_if),
+
         .fetcher_state(fetcher_state),
         .instruction(instruction) 
     );
