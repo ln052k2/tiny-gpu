@@ -12,6 +12,8 @@ src/registers.sv
 src/scheduler.sv
 src/memoryif.sv
 
+src/assertions/memoryif_a.sv
+
 test/helpers/memory.sv
 test/test_matadd.sv
 test/test_matmul.sv
