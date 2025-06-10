@@ -24,20 +24,10 @@ module core #(
     input wire [$clog2(THREADS_PER_BLOCK):0] thread_count,
 
     // Program Memory
-    output logic program_mem_read_valid,
-    output logic [PROGRAM_MEM_ADDR_BITS-1:0] program_mem_read_address,
-    input logic program_mem_read_ready,
-    input logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data,
+    mem_if.mem program_mem_if,
 
     // Data Memory
-    output logic [THREADS_PER_BLOCK-1:0] data_mem_read_valid,
-    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [THREADS_PER_BLOCK-1:0],
-    input logic [THREADS_PER_BLOCK-1:0] data_mem_read_ready,
-    input wire [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [THREADS_PER_BLOCK-1:0],
-    output logic [THREADS_PER_BLOCK-1:0] data_mem_write_valid,
-    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [THREADS_PER_BLOCK-1:0],
-    output logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data [THREADS_PER_BLOCK-1:0],
-    input logic [THREADS_PER_BLOCK-1:0] data_mem_write_ready
+    mem_if.mem data_mem_if
 );
     // State
     logic [2:0] core_state;
@@ -71,6 +61,7 @@ module core #(
     logic decoded_pc_mux;                     // Select source of next PC
     logic decoded_ret;
 
+
     // Fetcher
     fetcher #(
         .PROGRAM_MEM_ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -80,10 +71,7 @@ module core #(
         .reset(reset),
         .core_state(core_state),
         .current_pc(current_pc),
-        .mem_read_valid(program_mem_read_valid),
-        .mem_read_address(program_mem_read_address),
-        .mem_read_ready(program_mem_read_ready),
-        .mem_read_data(program_mem_read_data),
+        .mem_if(program_mem_if),
         .fetcher_state(fetcher_state),
         .instruction(instruction) 
     );
@@ -146,6 +134,24 @@ module core #(
             );
 
             // LSU
+            mem_if #(
+                .ADDR_BITS(DATA_MEM_ADDR_BITS),
+                .DATA_BITS(DATA_MEM_DATA_BITS),
+                .CHANNELS(1)
+            ) core_lsu_if();
+
+            always_ff @(posedge clk) begin
+                data_mem_if.read_valid[i]      <= core_lsu_if.read_valid[0];
+                data_mem_if.read_address[i]    <= core_lsu_if.read_address[0];
+                data_mem_if.write_valid[i]     <= core_lsu_if.write_valid[0];
+                data_mem_if.write_address[i]   <= core_lsu_if.write_address[0];
+                data_mem_if.write_data[i]      <= core_lsu_if.write_data[0];
+                core_lsu_if.read_ready[0]      <= data_mem_if.read_ready[i];
+                core_lsu_if.read_data[0]       <= data_mem_if.read_data[i];
+                core_lsu_if.write_ready[0]     <= data_mem_if.write_ready[i];
+            end
+
+
             lsu lsu_instance (
                 .clk(clk),
                 .reset(reset),
@@ -153,14 +159,7 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_read_valid(data_mem_read_valid[i]),
-                .mem_read_address(data_mem_read_address[i]),
-                .mem_read_ready(data_mem_read_ready[i]),
-                .mem_read_data(data_mem_read_data[i]),
-                .mem_write_valid(data_mem_write_valid[i]),
-                .mem_write_address(data_mem_write_address[i]),
-                .mem_write_data(data_mem_write_data[i]),
-                .mem_write_ready(data_mem_write_ready[i]),
+                .mem_if(core_lsu_if),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
