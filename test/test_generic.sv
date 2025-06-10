@@ -125,7 +125,7 @@ module test_generic;
             $display("Encoded prog[%0d] = %h", i, prog[i]);
         end
 
-        $display()
+        $display();
 
         cycles = 0;
         reset = 1;
