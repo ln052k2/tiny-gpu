@@ -17,11 +17,9 @@ module test_generic;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
 
-    // Clock
     initial clk = 0;
     always #5 clk = ~clk;
 
-    // Interfaces
     mem_if #(.ADDR_BITS(PROGRAM_MEM_ADDR_BITS), .DATA_BITS(PROGRAM_MEM_DATA_BITS), .CHANNELS(PROGRAM_MEM_CHANNELS)) program_mem_if();
     mem_if #(.ADDR_BITS(DATA_MEM_ADDR_BITS), .DATA_BITS(DATA_MEM_DATA_BITS), .CHANNELS(DATA_MEM_CHANNELS)) data_mem_if();
 

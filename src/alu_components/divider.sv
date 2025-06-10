@@ -7,7 +7,6 @@ module divider #(parameter N = 8)(
     output logic [N-1:0]   result,
     output logic               done
 );
-int n_cycles;
     typedef enum logic [1:0] {
         IDLE,
         RUN,
@@ -18,9 +17,8 @@ int n_cycles;
 
     logic signed [N:0]   acc; 
     logic [N-1:0]        q;  // quotient
-    logic [N-1:0]        m;  // remainder
+    logic signed [N:0]        m;  // remainder
     logic [$clog2(N+1)-1:0] count;
-    logic [N-1:0]        dividend_reg;
 
     assign result = q;
     assign done = (state == DONE);
@@ -40,7 +38,6 @@ int n_cycles;
             default: next_state = IDLE;
         endcase
     end
-
     always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             acc <= 0;
@@ -52,9 +49,8 @@ int n_cycles;
                 IDLE: begin
                     if (start) begin
                         acc <= 0;
-                        dividend_reg <= dividend;
                         q <= dividend;
-                        m <= divisor;
+                        m <= {1'b0, divisor};
                         count <= 0;
                     end
                 end

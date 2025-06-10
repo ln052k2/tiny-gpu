@@ -51,7 +51,7 @@ module decoder (
             decoded_ret <= 0;
         end else begin 
             // Decode when core_state = DECODE
-            if (core_state == 3'b010) begin 
+            if (core_state == core_states_pkg::DECODE) begin 
                 // Get instruction signals from instruction every time
                 decoded_rd_address <= instruction[11:8];
                 decoded_rs_address <= instruction[7:4];

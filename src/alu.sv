@@ -20,6 +20,7 @@ module alu (
     input logic [7:0] rs,
     input logic [7:0] rt,
     output wire [7:0] alu_out,
+
     // division is now multi step
     output wire alu_busy
 );
