@@ -21,7 +21,7 @@ module alu (
     output wire [7:0] alu_out
 );
     import states_pkg::*;
-    typedef enum {
+    typedef logic [1:0] enum {
         ADD = 2'b00,
         SUB = 2'b01,
         MUL = 2'b10,
