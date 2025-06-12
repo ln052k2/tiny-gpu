@@ -37,25 +37,20 @@ module scheduler #(
     output logic [2:0] core_state,
     output logic done
 );
+    import states_pkg::fetcher_state_t;
+    import states_pkg::lsu_state_t;
+    improt states_pkg::core_state_t;
+
     logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
-    
-    localparam IDLE = 3'b000, // Waiting to start
-        FETCH = 3'b001,       // Fetch instructions from program memory
-        DECODE = 3'b010,      // Decode instructions into control signals
-        REQUEST = 3'b011,     // Request data from registers or memory
-        WAIT = 3'b100,        // Wait for response from memory if necessary
-        EXECUTE = 3'b101,     // Execute ALU and PC calculations
-        UPDATE = 3'b110,      // Update registers, NZP, and PC
-        DONE = 3'b111;        // Done executing this block
-    
+        
     always @(posedge clk) begin 
         if (reset) begin
             current_pc <= 0;
-            core_state <= IDLE;
+            core_state <= core_state_t::IDLE;
             done <= 0;
         end else begin 
-            case (core_state)
-                IDLE: begin
+            case (core_state_t'(core_state))
+                core_state_t::IDLE: begin
                     // Here after reset (before kernel is launched, or after previous block has been processed)
                     if (start) begin 
                         // Start by fetching the next instruction for this block based on PC
@@ -64,7 +59,7 @@ module scheduler #(
                 end
                 FETCH: begin 
                     // Move on once fetcher_state = FETCHED
-                    if (fetcher_state == 3'b010) begin 
+                    if (fetcher_state == FETCHED) begin 
                         core_state <= DECODE;
                     end
                 end
@@ -81,7 +76,8 @@ module scheduler #(
                     any_lsu_waiting = 1'b0;
                     for (int i = 0; i < THREADS_PER_BLOCK; i++) begin
                         // Make sure no lsu_state = REQUESTING or WAITING
-                        if (lsu_state[i] == 2'b01 || lsu_state[i] == 2'b10) begin
+                        if (lsu_state_t'(lsu_state[i]) == REQUESTING || 
+                            lsu_state_t'(lsu_state[i]) == WAITING) begin
                             any_lsu_waiting = 1'b1;
                             break;
                         end
@@ -100,7 +96,7 @@ module scheduler #(
                     if (decoded_ret) begin 
                         // If we reach a RET instruction, this block is done executing
                         done <= 1;
-                        core_state <= DONE;
+                        core_state <= core_state_t::DONE;
                     end else begin 
                         // TODO: Branch divergence. For now assume all next_pc converge
                         current_pc <= next_pc[THREADS_PER_BLOCK-1];

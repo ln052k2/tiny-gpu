@@ -28,7 +28,8 @@ module lsu (
     output logic [1:0] lsu_state,
     output logic [7:0] lsu_out
 );
-    localparam IDLE = 2'b00, REQUESTING = 2'b01, WAITING = 2'b10, DONE = 2'b11;
+    import core_state_pkg::lsu_state_t;
+    import core_state_pkg::core_state_t;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -42,10 +43,10 @@ module lsu (
         end else if (enable) begin
             // If memory read enable is triggered (LDR instruction)
             if (decoded_mem_read_enable) begin 
-                case (lsu_state)
-                    IDLE: begin
+                case (lsu_state'(lsu_state))
+                    lsu_state_t::IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == 3'b011) begin 
+                        if (core_state == REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -63,7 +64,7 @@ module lsu (
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == 3'b110) begin 
+                        if (core_state == UPDATE) begin 
                             lsu_state <= IDLE;
                         end
                     end
@@ -75,7 +76,7 @@ module lsu (
                 case (lsu_state)
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == 3'b011) begin 
+                        if (core_state == REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -93,7 +94,7 @@ module lsu (
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == 3'b110) begin 
+                        if (core_state == UPDATE) begin 
                             lsu_state <= IDLE;
                         end
                     end

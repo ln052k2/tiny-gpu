@@ -31,17 +31,20 @@ module decoder (
     // Return (finished executing thread)
     output logic decoded_ret
 );
-    localparam NOP = 4'b0000,
-        BRnzp = 4'b0001,
-        CMP = 4'b0010,
-        ADD = 4'b0011,
-        SUB = 4'b0100,
-        MUL = 4'b0101,
-        DIV = 4'b0110,
-        LDR = 4'b0111,
-        STR = 4'b1000,
-        CONST = 4'b1001,
-        RET = 4'b1111;
+    import states_pkg::core_state_t;
+    typedef enum logic [3:0] {
+        NOP    = 4'b0000,
+        BRnzp  = 4'b0001,
+        CMP    = 4'b0010,
+        ADD    = 4'b0011,
+        SUB    = 4'b0100,
+        MUL    = 4'b0101,
+        DIV    = 4'b0110,
+        LDR    = 4'b0111,
+        STR    = 4'b1000,
+        CONST  = 4'b1001,
+        RET    = 4'b1111
+    } instruction_t;
 
     always @(posedge clk) begin 
         if (reset) begin 
@@ -61,7 +64,7 @@ module decoder (
             decoded_ret <= 0;
         end else begin 
             // Decode when core_state = DECODE
-            if (core_state == 3'b010) begin 
+            if (core_state == DECODE) begin 
                 // Get instruction signals from instruction every time
                 decoded_rd_address <= instruction[11:8];
                 decoded_rs_address <= instruction[7:4];
@@ -81,7 +84,7 @@ module decoder (
                 decoded_ret <= 0;
 
                 // Set the control signals for each instruction
-                case (instruction[15:12])
+                case (instruction_t'(instruction[15:12]))
                     NOP: begin 
                         // no-op
                     end

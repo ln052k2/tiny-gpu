@@ -20,11 +20,14 @@ module alu (
     input logic [7:0] rt,
     output wire [7:0] alu_out
 );
-    localparam ADD = 2'b00,
+    import states_pkg::core_state_t;
+    typedef enum {
+        ADD = 2'b00,
         SUB = 2'b01,
         MUL = 2'b10,
         DIV = 2'b11;
-
+    } operation_t;
+        
     logic [7:0] alu_out_reg;
     assign alu_out = alu_out_reg;
 
@@ -33,13 +36,13 @@ module alu (
             alu_out_reg <= 8'b0;
         end else if (enable) begin
             // Calculate alu_out when core_state = EXECUTE
-            if (core_state == 3'b101) begin 
+            if (core_state == EXECUTE) begin 
                 if (decoded_alu_output_mux == 1) begin 
                     // Set values to compare with NZP register in alu_out[2:0]
                     alu_out_reg <= {5'b0, (rs - rt > 0), (rs - rt == 0), (rs - rt < 0)};
                 end else begin 
                     // Execute the specified arithmetic instruction
-                    case (decoded_alu_arithmetic_mux)
+                    case (operation_t'(decoded_alu_arithmetic_mux))
                         ADD: begin 
                             alu_out_reg <= rs + rt;
                         end

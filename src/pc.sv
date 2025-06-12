@@ -31,6 +31,7 @@ module pc #(
     input logic [PROGRAM_MEM_ADDR_BITS-1:0] current_pc,
     output logic [PROGRAM_MEM_ADDR_BITS-1:0] next_pc
 );
+    import states_pkg::core_state_t;
     logic [2:0] nzp;
 
     always @(posedge clk) begin
@@ -39,7 +40,7 @@ module pc #(
             next_pc <= 0;
         end else if (enable) begin
             // Update PC when core_state = EXECUTE
-            if (core_state == 3'b101) begin 
+            if (core_state_t'(core_state) == EXECUTE) begin 
                 if (decoded_pc_mux == 1) begin 
                     if (((nzp & decoded_nzp) != 3'b0)) begin 
                         // On BRnzp instruction, branch to immediate if NZP case matches previous CMP
@@ -55,7 +56,7 @@ module pc #(
             end   
 
             // Store NZP when core_state = UPDATE   
-            if (core_state == 3'b110) begin 
+            if (core_state_t'(core_state) == UPDATE) begin 
                 // Write to NZP register on CMP instruction
                 if (decoded_nzp_write_enable) begin
                     nzp[2] <= alu_out[2];

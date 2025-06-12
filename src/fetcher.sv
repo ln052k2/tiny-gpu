@@ -21,10 +21,9 @@ module fetcher #(
     output logic [2:0] fetcher_state,
     output logic [PROGRAM_MEM_DATA_BITS-1:0] instruction
 );
-    localparam IDLE = 3'b000, 
-        FETCHING = 3'b001, 
-        FETCHED = 3'b010;
-    
+    import states_pkg::core_state_t;
+    import states_pkg::fetcher_state_t;
+
     always @(posedge clk) begin
         if (reset) begin
             fetcher_state <= IDLE;
@@ -32,10 +31,11 @@ module fetcher #(
             mem_if.read_address[0] <= {PROGRAM_MEM_ADDR_BITS{1'b0}};
             instruction <= {PROGRAM_MEM_DATA_BITS{1'b0}};
         end else begin
-            case (fetcher_state)
-                IDLE: begin
+            case (fetcher_state_t'(fetcher_state))
+                // careful... states for core/fetcher shouldn't overlap
+                fetcher_state_t::IDLE: begin
                     // Start fetching when core_state = FETCH
-                    if (core_state == 3'b001) begin
+                    if (core_state_t'(core_state) == FETCH) begin
                         fetcher_state <= FETCHING;
                         mem_if.read_valid <= 1;
                         mem_if.read_address[0] <= current_pc;
@@ -51,8 +51,8 @@ module fetcher #(
                 end
                 FETCHED: begin
                     // Reset when core_state = DECODE
-                    if (core_state == 3'b010) begin 
-                        fetcher_state <= IDLE;
+                    if (core_state_t'(core_state) == DECODE) begin 
+                        fetcher_state <= fetcher_state_t::IDLE;
                     end
                 end
             endcase

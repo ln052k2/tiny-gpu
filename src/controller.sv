@@ -20,14 +20,10 @@ module controller #(
     // Memory Interface (Data / Program)
     mem_if.mem mem_if
 );
-    localparam IDLE = 3'b000, 
-        READ_WAITING = 3'b010, 
-        WRITE_WAITING = 3'b011,
-        READ_RELAYING = 3'b100,
-        WRITE_RELAYING = 3'b101;
+    import states_pkg::controller_state_t;
 
     // Keep track of state for each channel and which jobs each channel is handling
-    logic [2:0] controller_state [NUM_CHANNELS-1:0];
+    controller_state_t controller_state [NUM_CHANNELS];
     logic [$clog2(NUM_CONSUMERS)-1:0] current_consumer [NUM_CHANNELS-1:0]; // Which consumer is each channel currently serving
     logic [NUM_CONSUMERS-1:0] channel_serving_consumer; // Which channels are being served? Prevents many workers from picking up the same request.
 
@@ -52,7 +48,7 @@ module controller #(
             // For each channel, we handle processing concurrently
             for (int i = 0; i < NUM_CHANNELS; i = i + 1) begin 
                 case (controller_state[i])
-                    IDLE: begin
+                    conteroller_state_t::IDLE: begin
                         // While this channel is idle, cycle through consumers looking for one with a pending request
                         for (int j = 0; j < NUM_CONSUMERS; j = j + 1) begin 
                             if (consumer_if.read_valid[j] && !channel_serving_consumer[j]) begin 
@@ -101,14 +97,14 @@ module controller #(
                         if (!consumer_if.read_valid[current_consumer[i]]) begin 
                             channel_serving_consumer[current_consumer[i]] = 0;
                             consumer_if.read_ready[current_consumer[i]] <= 0;
-                            controller_state[i] <= IDLE;
+                            controller_state[i] <= controller_state_t::IDLE;
                         end
                     end
                     WRITE_RELAYING: begin 
                         if (!consumer_if.write_valid[current_consumer[i]]) begin 
                             channel_serving_consumer[current_consumer[i]] = 0;
                             consumer_if.write_ready[current_consumer[i]] <= 0;
-                            controller_state[i] <= IDLE;
+                            controller_state[i] <= controller_state_t::IDLE;
                         end
                     end
                 endcase
