@@ -23,14 +23,6 @@ module lsu (
     input logic [7:0] rt,
 
     // Data Memory
-    // output logic mem_read_valid,
-    // output logic [7:0] mem_read_address,
-    // input logic mem_read_ready,
-    // input logic [7:0] mem_read_data,
-    // output logic mem_write_valid,
-    // output logic [7:0] mem_write_address,
-    // output logic [7:0] mem_write_data,
-    // input logic mem_write_ready,
     mem_if.mem mem_if,
 
     // LSU Outputs

@@ -12,3 +12,17 @@
 * Added SystemVerilog port for test_matadd
 * Added sources.f file for quick compilation (use ```vlog -lint -source -file sources.f```)
 * Changed signals that used input reg -> input logic/wires to move from Verilog to SystemVerilog
+
+## Cache
+* Write through, direct mapped
+* Cache hits served instantly
+* Cache misses trigger memory read -> requesting LSU is stalled until completion
+
+[GPU cores]
+     lsu_if (multi-channel)
+     [cache]   ← arbitration + tag/data store + mem_if interface
+  data_mem_if (external memory)
+
+* Cache requests are serialized, not served in parallel
+* Other requests are stalled until arbitration grants them access
+* BUT fixed priority arbitration, and fetcher always fetches in blocks
