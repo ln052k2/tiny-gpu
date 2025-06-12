@@ -6,6 +6,7 @@ src/pkg/fetcher_states_pkg.sv
 src/pkg/lsu_states_pkg.sv
 src/pkg/opcodes_pkg.sv
 src/assertions/divider_assertions.sv
+src/assertions/memoryif_a.sv
 src/alu.sv
 src/alu_components/divider.sv
 src/controller.sv
