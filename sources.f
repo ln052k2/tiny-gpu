@@ -11,6 +11,7 @@ src/pc.sv
 src/registers.sv
 src/scheduler.sv
 src/memoryif.sv
+src/states.sv
 
 src/assertions/memoryif_a.sv
 
