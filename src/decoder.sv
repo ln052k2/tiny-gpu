@@ -31,7 +31,7 @@ module decoder (
     // Return (finished executing thread)
     output logic decoded_ret
 );
-    import states_pkg::core_state_t;
+    import states_pkg::*;
     typedef enum logic [3:0] {
         NOP    = 4'b0000,
         BRnzp  = 4'b0001,
@@ -64,7 +64,7 @@ module decoder (
             decoded_ret <= 0;
         end else begin 
             // Decode when core_state = DECODE
-            if (core_state == DECODE) begin 
+            if (core_state_t'(core_state) == DECODE) begin 
                 // Get instruction signals from instruction every time
                 decoded_rd_address <= instruction[11:8];
                 decoded_rs_address <= instruction[7:4];

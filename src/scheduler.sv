@@ -37,20 +37,17 @@ module scheduler #(
     output logic [2:0] core_state,
     output logic done
 );
-    import states_pkg::fetcher_state_t;
-    import states_pkg::lsu_state_t;
-    improt states_pkg::core_state_t;
-
+    import states_pkg::*;
     logic any_lsu_waiting; // Flag to indicate if any LSU is waiting for a response
         
     always @(posedge clk) begin 
         if (reset) begin
             current_pc <= 0;
-            core_state <= core_state_t::IDLE;
+            core_state <= CORE_IDLE;
             done <= 0;
         end else begin 
             case (core_state_t'(core_state))
-                core_state_t::IDLE: begin
+                CORE_IDLE: begin
                     // Here after reset (before kernel is launched, or after previous block has been processed)
                     if (start) begin 
                         // Start by fetching the next instruction for this block based on PC
@@ -59,7 +56,7 @@ module scheduler #(
                 end
                 FETCH: begin 
                     // Move on once fetcher_state = FETCHED
-                    if (fetcher_state == FETCHED) begin 
+                    if (fetcher_state'(fetcher_state) == FETCHED) begin 
                         core_state <= DECODE;
                     end
                 end
@@ -96,7 +93,7 @@ module scheduler #(
                     if (decoded_ret) begin 
                         // If we reach a RET instruction, this block is done executing
                         done <= 1;
-                        core_state <= core_state_t::DONE;
+                        core_state <= CORE_DONE;
                     end else begin 
                         // TODO: Branch divergence. For now assume all next_pc converge
                         current_pc <= next_pc[THREADS_PER_BLOCK-1];

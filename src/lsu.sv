@@ -28,8 +28,7 @@ module lsu (
     output logic [1:0] lsu_state,
     output logic [7:0] lsu_out
 );
-    import states_pkg::lsu_state_t;
-    import states_pkg::core_state_t;
+    import states_pkg::*;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -62,7 +61,7 @@ module lsu (
                             lsu_state <= LSU_DONE;
                         end
                     end
-                    DONE: begin 
+                    LSU_DONE: begin 
                         // Reset when core_state = UPDATE
                         if (core_state_t'(core_state) == UPDATE) begin 
                             lsu_state <= LSU_IDLE;
@@ -74,7 +73,7 @@ module lsu (
             // If memory write enable is triggered (STR instruction)
             if (decoded_mem_write_enable) begin 
                 case (lsu_state_t'(lsu_state))
-                    IDLE: begin
+                    LSU_IDLE: begin
                         // Only read when core_state = REQUEST
                         if (core_state_t'(core_state) == REQUEST) begin 
                             lsu_state <= REQUESTING;
@@ -92,7 +91,7 @@ module lsu (
                             lsu_state <= LSU_DONE;
                         end
                     end
-                    DONE: begin 
+                    LSU_DONE: begin 
                         // Reset when core_state = UPDATE
                         if (core_state_t'(core_state) == UPDATE) begin 
                             lsu_state <= LSU_IDLE;

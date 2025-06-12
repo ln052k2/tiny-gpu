@@ -20,7 +20,7 @@ module controller #(
     // Memory Interface (Data / Program)
     mem_if.mem mem_if
 );
-    import states_pkg::controller_state_t;
+    import states_pkg::*;
 
     // Keep track of state for each channel and which jobs each channel is handling
     controller_state_t controller_state [NUM_CHANNELS];
@@ -47,7 +47,7 @@ module controller #(
         end else begin 
             // For each channel, we handle processing concurrently
             for (int i = 0; i < NUM_CHANNELS; i = i + 1) begin 
-                case (controller_state[i])
+                case (controller_state_t'(controller_state[i]))
                     CONTROLLER_IDLE: begin
                         // While this channel is idle, cycle through consumers looking for one with a pending request
                         for (int j = 0; j < NUM_CONSUMERS; j = j + 1) begin 
