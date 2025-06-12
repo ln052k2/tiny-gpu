@@ -25,7 +25,7 @@ module alu (
         ADD = 2'b00,
         SUB = 2'b01,
         MUL = 2'b10,
-        DIV = 2'b11;
+        DIV = 2'b11
     } operation_t;
         
     logic [7:0] alu_out_reg;
