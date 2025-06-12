@@ -42,7 +42,7 @@ module lsu (
         end else if (enable) begin
             // If memory read enable is triggered (LDR instruction)
             if (decoded_mem_read_enable) begin 
-                case (lsu_state'(lsu_state))
+                case (lsu_state_t'(lsu_state))
                     LSU_IDLE: begin
                         // Only read when core_state = REQUEST
                         if (core_state_t'(core_state) == REQUEST) begin 

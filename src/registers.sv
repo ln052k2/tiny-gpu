@@ -37,7 +37,8 @@ module registers #(
     output logic [7:0] rs,
     output logic [7:0] rt
 );
-    import states_pkg::core_state_t;
+    import states_pkg::*;
+    integer i;
 
     typedef enum logic [1:0] {
         ARITHMETIC = 2'b00,

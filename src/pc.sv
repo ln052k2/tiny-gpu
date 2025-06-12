@@ -31,7 +31,7 @@ module pc #(
     input logic [PROGRAM_MEM_ADDR_BITS-1:0] current_pc,
     output logic [PROGRAM_MEM_ADDR_BITS-1:0] next_pc
 );
-    import states_pkg::core_state_t;
+    import states_pkg::*;
     logic [2:0] nzp;
 
     always @(posedge clk) begin

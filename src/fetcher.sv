@@ -25,7 +25,7 @@ module fetcher #(
 
     always @(posedge clk) begin
         if (reset) begin
-            fetcher_state <= IDLE;
+            fetcher_state <= FETCHER_IDLE;
             mem_if.read_valid <= 0;
             mem_if.read_address[0] <= {PROGRAM_MEM_ADDR_BITS{1'b0}};
             instruction <= {PROGRAM_MEM_DATA_BITS{1'b0}};

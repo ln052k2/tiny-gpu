@@ -102,7 +102,7 @@ module scheduler #(
                         core_state <= FETCH;
                     end
                 end
-                DONE: begin 
+                CORE_DONE: begin 
                     // no-op
                 end
             endcase
