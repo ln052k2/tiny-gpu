@@ -15,7 +15,7 @@ module test_divider;
   logic done;
 
   // Instantiate DUT and assertion wrapper
-  divider #(.N(N)) dut (
+  divider #(.N(N), .verbose_flag(0)) dut (
     .clk      (clk),
     .reset    (reset),
     .start    (start),
