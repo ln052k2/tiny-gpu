@@ -28,8 +28,8 @@ module lsu (
     output logic [1:0] lsu_state,
     output logic [7:0] lsu_out
 );
-    import core_state_pkg::lsu_state_t;
-    import core_state_pkg::core_state_t;
+    import states_pkg::lsu_state_t;
+    import states_pkg::core_state_t;
 
     always @(posedge clk) begin
         if (reset) begin
