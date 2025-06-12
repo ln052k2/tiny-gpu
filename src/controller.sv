@@ -48,7 +48,7 @@ module controller #(
             // For each channel, we handle processing concurrently
             for (int i = 0; i < NUM_CHANNELS; i = i + 1) begin 
                 case (controller_state[i])
-                    conteroller_state_t::IDLE: begin
+                    CONTROLLER_IDLE: begin
                         // While this channel is idle, cycle through consumers looking for one with a pending request
                         for (int j = 0; j < NUM_CONSUMERS; j = j + 1) begin 
                             if (consumer_if.read_valid[j] && !channel_serving_consumer[j]) begin 
@@ -97,14 +97,14 @@ module controller #(
                         if (!consumer_if.read_valid[current_consumer[i]]) begin 
                             channel_serving_consumer[current_consumer[i]] = 0;
                             consumer_if.read_ready[current_consumer[i]] <= 0;
-                            controller_state[i] <= controller_state_t::IDLE;
+                            controller_state[i] <= CONTROLLER_IDLE;
                         end
                     end
                     WRITE_RELAYING: begin 
                         if (!consumer_if.write_valid[current_consumer[i]]) begin 
                             channel_serving_consumer[current_consumer[i]] = 0;
                             consumer_if.write_ready[current_consumer[i]] <= 0;
-                            controller_state[i] <= controller_state_t::IDLE;
+                            controller_state[i] <= CONTROLLER_IDLE;
                         end
                     end
                 endcase

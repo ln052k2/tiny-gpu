@@ -33,7 +33,7 @@ module lsu (
 
     always @(posedge clk) begin
         if (reset) begin
-            lsu_state <= IDLE;
+            lsu_state <= LSU_IDLE;
             lsu_out <= 0;
             mem_if.read_valid <= 1'b0;
             mem_if.read_address[0] <= 8'b0;
@@ -44,9 +44,9 @@ module lsu (
             // If memory read enable is triggered (LDR instruction)
             if (decoded_mem_read_enable) begin 
                 case (lsu_state'(lsu_state))
-                    lsu_state_t::IDLE: begin
+                    LSU_IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == REQUEST) begin 
+                        if (core_state_t'(core_state) == REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -59,13 +59,13 @@ module lsu (
                         if (mem_if.read_ready == 1) begin
                             mem_if.read_valid <= 0;
                             lsu_out <= mem_if.read_data[0];
-                            lsu_state <= DONE;
+                            lsu_state <= LSU_DONE;
                         end
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == UPDATE) begin 
-                            lsu_state <= IDLE;
+                        if (core_state_t'(core_state) == UPDATE) begin 
+                            lsu_state <= LSU_IDLE;
                         end
                     end
                 endcase
@@ -73,10 +73,10 @@ module lsu (
 
             // If memory write enable is triggered (STR instruction)
             if (decoded_mem_write_enable) begin 
-                case (lsu_state)
+                case (lsu_state_t'(lsu_state))
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == REQUEST) begin 
+                        if (core_state_t'(core_state) == REQUEST) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -89,13 +89,13 @@ module lsu (
                     WAITING: begin
                         if (mem_if.write_ready) begin
                             mem_if.write_valid <= 0;
-                            lsu_state <= DONE;
+                            lsu_state <= LSU_DONE;
                         end
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == UPDATE) begin 
-                            lsu_state <= IDLE;
+                        if (core_state_t'(core_state) == UPDATE) begin 
+                            lsu_state <= LSU_IDLE;
                         end
                     end
                 endcase

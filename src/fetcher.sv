@@ -33,7 +33,7 @@ module fetcher #(
         end else begin
             case (fetcher_state_t'(fetcher_state))
                 // careful... states for core/fetcher shouldn't overlap
-                fetcher_state_t::IDLE: begin
+                FETCHER_IDLE: begin
                     // Start fetching when core_state = FETCH
                     if (core_state_t'(core_state) == FETCH) begin
                         fetcher_state <= FETCHING;
@@ -52,7 +52,7 @@ module fetcher #(
                 FETCHED: begin
                     // Reset when core_state = DECODE
                     if (core_state_t'(core_state) == DECODE) begin 
-                        fetcher_state <= fetcher_state_t::IDLE;
+                        fetcher_state <= FETCHER_IDLE;
                     end
                 end
             endcase
