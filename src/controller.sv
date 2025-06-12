@@ -41,7 +41,7 @@ module controller #(
             consumer_if.write_ready <= 1'b0;
 
             current_consumer <= '{default: '0};
-            controller_state <= CONTROLLER_IDLE;
+            controller_state <= '{default: CONTROLLER_IDLE};
 
             channel_serving_consumer <= '{default: '0};
         end else begin 

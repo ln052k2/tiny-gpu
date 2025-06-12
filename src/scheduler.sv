@@ -56,7 +56,7 @@ module scheduler #(
                 end
                 FETCH: begin 
                     // Move on once fetcher_state = FETCHED
-                    if (fetcher_state'(fetcher_state) == FETCHED) begin 
+                    if (fetcher_state_t'(fetcher_state) == FETCHED) begin 
                         core_state <= DECODE;
                     end
                 end

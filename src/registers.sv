@@ -43,7 +43,7 @@ module registers #(
     typedef enum logic [1:0] {
         ARITHMETIC = 2'b00,
         MEMORY = 2'b01,
-        CONSTANT = 2'b10;
+        CONSTANT = 2'b10
     } alu_reg_t;
 
     // 16 registers per thread (13 free registers and 3 read-only registers)
