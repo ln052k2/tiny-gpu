@@ -8,10 +8,10 @@ module cache #(
     input wire reset,
 
     // From LSU
-    mem_if.consumer cache_if ,
+    mem_if.consumer cache_if,
 
-    // To Global Memory
-    mem_if.mem #(.CHANNELS(1)) data_mem_if
+    // to global memory
+    mem_if.mem data_mem_if
 );
 
 localparam LINE_INDEX_BITS = $clog2(CACHE_LINES);
