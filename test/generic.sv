@@ -10,6 +10,7 @@ module test_generic;
     localparam PROGRAM_MEM_CHANNELS   = 1;
     localparam CORES                  = 2;
     localparam THREADS                = 8;
+    localparam PROGRAM_LENGTH         = 32;
     int cycles;
 
     logic [DATA_MEM_DATA_BITS-1:0] expected, result;
@@ -20,28 +21,57 @@ module test_generic;
     initial clk = 0;
     always #5 clk = ~clk;
 
-    mem_if #(.ADDR_BITS(PROGRAM_MEM_ADDR_BITS), .DATA_BITS(PROGRAM_MEM_DATA_BITS), .CHANNELS(PROGRAM_MEM_CHANNELS)) program_mem_if();
-    mem_if #(.ADDR_BITS(DATA_MEM_ADDR_BITS), .DATA_BITS(DATA_MEM_DATA_BITS), .CHANNELS(DATA_MEM_CHANNELS)) data_mem_if();
+    // Interfaces    // Instantiate memory interfaces
+    mem_if #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) program_mem_if();
 
-    // Memories
-    Memory #(.ADDR_BITS(PROGRAM_MEM_ADDR_BITS), .DATA_BITS(PROGRAM_MEM_DATA_BITS), .CHANNELS(PROGRAM_MEM_CHANNELS)) program_memory;
-    Memory #(.ADDR_BITS(DATA_MEM_ADDR_BITS), .DATA_BITS(DATA_MEM_DATA_BITS), .CHANNELS(DATA_MEM_CHANNELS)) data_memory;
+    mem_if #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) data_mem_if();
 
-    logic [PROGRAM_MEM_DATA_BITS-1:0] prog [0:6] = '{
-        16'b0111000000010000,  // LDR R0, [R1]      ; load once to hit cache
-        16'b0111000000010000,  // LDR R0, [R1]      ; same addr, expect cache hit
-        16'b0111000000010000,  // LDR R0, [R1]      ; same addr, expect cache hit
-        16'b1000000000000000,  // STR R0, [R1]      ; store back
-        16'b0111000000010000,  // LDR R0, [R1]      ; reload, maybe still cached
-        16'b1111000000000000,  // RET
-        16'b0000000000000000   // padding
-    };
+    // Assertions for PROGRAM memory interface
+    mem_if_a #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) assert_program_mem (
+        .clk(clk),
+        .reset(reset),
+        .mem_if(program_mem_if)
+    );
 
-    logic [DATA_MEM_DATA_BITS-1:0] data [0:15] = '{
-        8'd42, 1, 2, 3, 4, 5, 6, 7,  // Memory A
-        0, 1, 2, 3, 4, 5, 6, 7       // Memory B
-    };
+    // Assertions for DATA memory interface
+    mem_if_a #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) assert_data_mem (
+        .clk(clk),
+        .reset(reset),
+        .mem_if(data_mem_if)
+    );
 
+    // Memories    
+    Memory #(
+        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+        .CHANNELS(PROGRAM_MEM_CHANNELS)
+    ) program_memory;
+    Memory #(
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .CHANNELS(DATA_MEM_CHANNELS)
+    ) data_memory;
+
+    logic [15:0] prog [0:PROGRAM_LENGTH-1] = '{default:0};
+    logic [DATA_MEM_DATA_BITS-1:0] data [0:15] = '{default: 0};
+
+    // Instantiate DUT
     gpu #(
         .DATA_MEM_ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_MEM_DATA_BITS(DATA_MEM_DATA_BITS),
@@ -60,19 +90,11 @@ module test_generic;
         .device_control_write_enable(device_control_write_enable),
         .device_control_data(device_control_data),
 
-        .program_mem_read_valid(program_mem_if.read_valid),
-        .program_mem_read_address(program_mem_if.read_address),
-        .program_mem_read_ready(program_mem_if.read_ready),
-        .program_mem_read_data(program_mem_if.read_data),
+        // Program memory hookup via interface
+        .program_mem_if(program_mem_if),
 
-        .data_mem_read_valid(data_mem_if.read_valid),
-        .data_mem_read_address(data_mem_if.read_address),
-        .data_mem_read_ready(data_mem_if.read_ready),
-        .data_mem_read_data(data_mem_if.read_data),
-        .data_mem_write_valid(data_mem_if.write_valid),
-        .data_mem_write_address(data_mem_if.write_address),
-        .data_mem_write_data(data_mem_if.write_data),
-        .data_mem_write_ready(data_mem_if.write_ready)
+        // Data memory hookup via interface
+        .data_mem_if(data_mem_if)
     );
 
     // Debug hooks
@@ -85,7 +107,25 @@ module test_generic;
         end
     endtask
 
+    import instruction_pkg::*;
+    instr_fields_t instr;
+    InstrCoverage coverage;
+
     initial begin
+        instr = new();
+        coverage = new();
+        // Fill program memory with randomized instructions
+        for (int i = 0; i < PROGRAM_LENGTH; i++) begin
+            // Randomize fields and get encoded instruction
+            prog[i] = instr.generate_instr();
+            coverage.sample(instr);
+
+            instr.print_instr();
+            $display("Encoded prog[%0d] = %h", i, prog[i]);
+        end
+
+        $display();
+
         cycles = 0;
         reset = 1;
         @(posedge clk);
@@ -117,14 +157,6 @@ module test_generic;
         $display("Completed in %0d cycles", cycles);
         data_memory.display(16);
 
-        for (int i = 0; i < 1; i++) begin
-            expected = data[i];  // 42
-            result   = data_memory.memory[i];
-            if (result !== expected)
-                $fatal("Mismatch at index %0d: expected %0d, got %0d", i, expected, result);
-        end
-
-        $display("All results correct.");
         $finish;
     end
 endmodule
