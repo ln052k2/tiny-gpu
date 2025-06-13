@@ -1,19 +1,156 @@
-$date
-	Thu Jun 12 21:28:09 2025
-$end
-$version
-	QuestaSim Version 2024.2
-$end
-$timescale
-	1ps
-$end
-
-$scope module cache_tb $end
-
-$scope module dut $end
-$upscope $end
-$upscope $end
-$enddefinitions $end
-#0
-$dumpvars
-$end
+VSIM 1> run -all
+# ========================================
+# Starting Simple Cache Testbench
+# ========================================
+#
+# --- Test 1: Read Miss ---
+# Starting LSU0 read from addr=0x10
+# Memory Read: addr=0x10, data=0x60
+# Memory Read: addr=0x10, data=0x60
+# LSU0 read complete: addr=0x10, data=0x60
+# PASS: Read Miss - Expected: 0x60, Got: 0x60
+#
+# --- Test 2: Read Hit ---
+# Starting LSU0 read from addr=0x10
+# LSU0 read complete: addr=0x10, data=0x60
+# PASS: Read Hit - Expected: 0x60, Got: 0x60
+#
+# --- Test 3: Write Miss ---
+# Starting LSU0 write to addr=0x20, data=0xab
+# Memory Write: addr=0x20, data=0xab
+# Memory Write: addr=0x20, data=0xab
+# LSU0 write complete: addr=0x20, data=0xab
+# PASS: Write Miss - Data written to memory
+#
+# --- Test 4: Write Hit ---
+# Starting LSU0 write to addr=0x10, data=0xcd
+# LSU0 write complete: addr=0x10, data=0xcd
+# Starting LSU0 read from addr=0x10
+# Memory Write: addr=0x20, data=0xab
+# Memory Write: addr=0x20, data=0xab
+# Memory Write: addr=0x10, data=0xcd
+# LSU0 read complete: addr=0x10, data=0xcd
+# PASS: Write Hit - Expected: 0xcd, Got: 0xcd
+#
+# --- Test 5: Different LSU Access ---
+# Starting LSU1 read from addr=0x30
+# Memory Read: addr=0x30, data=0x80
+# Memory Read: addr=0x30, data=0x80
+# LSU1 read complete: addr=0x30, data=0x80
+# PASS: LSU1 Read - Expected: 0x80, Got: 0x80
+#
+# --- Test 6: Write from Different LSU ---
+# Starting LSU2 write to addr=0x40, data=0xef
+# Memory Write: addr=0x40, data=0xef
+# Memory Write: addr=0x40, data=0xef
+# LSU2 write complete: addr=0x40, data=0xef
+# PASS: LSU2 Write - Data written to memory
+#
+# --- Test 7: Cache Flush ---
+# Starting LSU0 write to addr=0x50, data=0x55
+# Memory Write: addr=0x40, data=0xef
+# Memory Write: addr=0x40, data=0xef
+# Memory Write: addr=0x50, data=0x55
+# LSU0 write complete: addr=0x50, data=0x55
+# Starting LSU0 read from addr=0x50
+# Memory Read: addr=0x50, data=0x55
+# Memory Read: addr=0x50, data=0x55
+# LSU0 read complete: addr=0x50, data=0x55
+# FAIL: Post-Flush Read - Expected: 0xa0, Got: 0x55
+#
+# --- Test 8: Cache Line Eviction ---
+# Starting LSU0 write to addr=0x00, data=0xf0
+# Memory Write: addr=0x00, data=0xf0
+# Memory Write: addr=0x00, data=0xf0
+# LSU0 write complete: addr=0x00, data=0xf0
+# Starting LSU0 write to addr=0x10, data=0xf1
+# LSU0 write complete: addr=0x10, data=0xf1
+# Starting LSU0 write to addr=0x20, data=0xf2
+# Memory Write: addr=0x00, data=0xf0
+# Memory Write: addr=0x00, data=0xf0
+# Memory Write: addr=0x10, data=0xf1
+# LSU0 write complete: addr=0x20, data=0xf2
+# Starting LSU0 write to addr=0x30, data=0xf3
+# Memory Write: addr=0x20, data=0xf2
+# Memory Write: addr=0x20, data=0xf2
+# LSU0 write complete: addr=0x30, data=0xf3
+# Starting LSU0 write to addr=0x40, data=0xf4
+# Memory Write: addr=0x30, data=0xf3
+# Memory Write: addr=0x30, data=0xf3
+# LSU0 write complete: addr=0x40, data=0xf4
+# Starting LSU0 write to addr=0x50, data=0xf5
+# Memory Write: addr=0x40, data=0xf4
+# Memory Write: addr=0x40, data=0xf4
+# LSU0 write complete: addr=0x50, data=0xf5
+# Starting LSU0 write to addr=0x60, data=0xf6
+# Memory Write: addr=0x50, data=0xf5
+# Memory Write: addr=0x50, data=0xf5
+# LSU0 write complete: addr=0x60, data=0xf6
+# Starting LSU0 write to addr=0x70, data=0xf7
+# Memory Write: addr=0x60, data=0xf6
+# Memory Write: addr=0x60, data=0xf6
+# LSU0 write complete: addr=0x70, data=0xf7
+# Starting LSU0 write to addr=0x80, data=0xf8
+# Memory Write: addr=0x70, data=0xf7
+# Memory Write: addr=0x70, data=0xf7
+# LSU0 write complete: addr=0x80, data=0xf8
+# Starting LSU0 write to addr=0x90, data=0xf9
+# Memory Write: addr=0x80, data=0xf8
+# Memory Write: addr=0x80, data=0xf8
+# LSU0 write complete: addr=0x90, data=0xf9
+# Starting LSU0 write to addr=0xa0, data=0xfa
+# Memory Write: addr=0x90, data=0xf9
+# Memory Write: addr=0x90, data=0xf9
+# LSU0 write complete: addr=0xa0, data=0xfa
+# Starting LSU0 write to addr=0xb0, data=0xfb
+# Memory Write: addr=0xa0, data=0xfa
+# Memory Write: addr=0xa0, data=0xfa
+# LSU0 write complete: addr=0xb0, data=0xfb
+# Starting LSU0 write to addr=0xc0, data=0xfc
+# Memory Write: addr=0xb0, data=0xfb
+# Memory Write: addr=0xb0, data=0xfb
+# LSU0 write complete: addr=0xc0, data=0xfc
+# Starting LSU0 write to addr=0xd0, data=0xfd
+# Memory Write: addr=0xc0, data=0xfc
+# Memory Write: addr=0xc0, data=0xfc
+# LSU0 write complete: addr=0xd0, data=0xfd
+# Starting LSU0 write to addr=0xe0, data=0xfe
+# Memory Write: addr=0xd0, data=0xfd
+# Memory Write: addr=0xd0, data=0xfd
+# LSU0 write complete: addr=0xe0, data=0xfe
+# Starting LSU0 write to addr=0xf0, data=0xff
+# Memory Write: addr=0xe0, data=0xfe
+# Memory Write: addr=0xe0, data=0xfe
+# LSU0 write complete: addr=0xf0, data=0xff
+# Starting LSU0 write to addr=0x00, data=0x00
+# Memory Write: addr=0xf0, data=0xff
+# Memory Write: addr=0xf0, data=0xff
+# LSU0 write complete: addr=0x00, data=0x00
+# Starting LSU0 write to addr=0x10, data=0x01
+# Memory Write: addr=0x00, data=0x00
+# Memory Write: addr=0x00, data=0x00
+# LSU0 write complete: addr=0x10, data=0x01
+# Starting LSU0 write to addr=0x20, data=0x02
+# Memory Write: addr=0x10, data=0x01
+# Memory Write: addr=0x10, data=0x01
+# LSU0 write complete: addr=0x20, data=0x02
+# Starting LSU0 write to addr=0x30, data=0x03
+# Memory Write: addr=0x20, data=0x02
+# Memory Write: addr=0x20, data=0x02
+# LSU0 write complete: addr=0x30, data=0x03
+# Starting LSU0 read from addr=0x00
+# Memory Write: addr=0x30, data=0x03
+# Memory Write: addr=0x30, data=0x03
+# Memory Read: addr=0x00, data=0x00
+# Memory Read: addr=0x00, data=0x00
+# LSU0 read complete: addr=0x00, data=0x00
+# FAIL: Eviction Test - Expected: 0x50, Got: 0x00
+#
+# ========================================
+# Test Results: 6/8 tests passed
+# SOME TESTS FAILED!
+# ========================================
+# ** Note: $finish    : test/test_cache.sv(293)
+#    Time: 2245 ns  Iteration: 1  Instance: /cache_tb
+# End time: 21:28:09 on Jun 12,2025, Elapsed time: 0:00:02
+# Errors: 0, Warnings: 0
