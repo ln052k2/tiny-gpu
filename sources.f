@@ -1,6 +1,7 @@
 src/alu.sv
 src/controller.sv
 src/core.sv
+src/cache.sv
 src/dcr.sv
 src/decoder.sv
 src/dispatch.sv
