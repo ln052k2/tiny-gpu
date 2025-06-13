@@ -11,7 +11,6 @@ src/lsu.sv
 src/pc.sv
 src/registers.sv
 src/scheduler.sv
-src/memoryif.sv
 
 test/helpers/instructions.sv
 test/helpers/memoryif.sv

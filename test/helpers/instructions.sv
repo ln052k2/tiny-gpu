@@ -48,6 +48,7 @@ endclass
 // Instruction coverage group class
 class InstrCoverage;
     instr_fields_t f;
+    logic [3:0] prev_opcode;
 
     covergroup cg;
         coverpoint f.opcode {
@@ -95,7 +96,6 @@ class InstrCoverage;
         } // tracks combinations of opcode and immediate values
 
         // Track instruction sequences
-        logic [3:0] prev_opcode;
         coverpoint f.opcode {
             bins load_store_seq = (4'b0111 => 4'b1000); // LDR followed by STR
             bins arith_seq = (4'b0011, 4'b0100, 4'b0101, 4'b0110 => 4'b0010); // Math then CMP
