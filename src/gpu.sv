@@ -80,7 +80,7 @@ module gpu #(
         .reset(reset),
 
         .consumer_if(lsu_if),
-        .mem_if(data_mem_if)
+        .memory_if(data_mem_if)
     );
 
     // Program Memory Controller
