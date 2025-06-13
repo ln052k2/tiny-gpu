@@ -65,6 +65,7 @@ bind dut divider_assertions dut_assert(.*);
     foreach(failed_by_dividend[key]) $display("%0d failed with %0d divisors", key, failed_by_dividend[key].size());
     foreach(failed_by_divisor[key]) $display("%0d failed with %0d dividends", key, failed_by_divisor[key].size());
     // All done
+    $display("** NOTE: DIVIDE BY ZERO ERRORS ARE EXPECTED; THEY ARE FROM TEST BENCH NOT DUT")
     $display("** Exhaustive tests complete");
     $finish;
   end
