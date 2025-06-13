@@ -158,7 +158,8 @@ module core_l1_cache #(
         
         // Round-robin through this core's LSUs
         for (int i = 1; i <= THREADS_PER_BLOCK; i++) begin
-            logic [$clog2(THREADS_PER_BLOCK)-1:0] candidate = (serving_lsu + i) % THREADS_PER_BLOCK;
+            logic [$clog2(THREADS_PER_BLOCK)-1:0] candidate;
+            candidate = (serving_lsu + i) % THREADS_PER_BLOCK;
             if (lsu_read_valid[candidate] || lsu_write_valid[candidate]) begin
                 next_serving_lsu = candidate;
                 break;
