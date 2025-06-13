@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // MEMORY CONTROLLER
@@ -16,24 +16,24 @@ module controller #(
     input wire reset,
 
     // Consumer Interface (Fetchers / LSUs)
-    input reg [NUM_CONSUMERS-1:0] consumer_read_valid,
-    input reg [ADDR_BITS-1:0] consumer_read_address [NUM_CONSUMERS-1:0],
-    output reg [NUM_CONSUMERS-1:0] consumer_read_ready,
-    output reg [DATA_BITS-1:0] consumer_read_data [NUM_CONSUMERS-1:0],
-    input reg [NUM_CONSUMERS-1:0] consumer_write_valid,
-    input reg [ADDR_BITS-1:0] consumer_write_address [NUM_CONSUMERS-1:0],
-    input reg [DATA_BITS-1:0] consumer_write_data [NUM_CONSUMERS-1:0],
-    output reg [NUM_CONSUMERS-1:0] consumer_write_ready,
+    input logic [NUM_CONSUMERS-1:0] consumer_read_valid,
+    input wire [ADDR_BITS-1:0] consumer_read_address [NUM_CONSUMERS-1:0],
+    output logic [NUM_CONSUMERS-1:0] consumer_read_ready,
+    output logic [DATA_BITS-1:0] consumer_read_data [NUM_CONSUMERS-1:0],
+    input logic [NUM_CONSUMERS-1:0] consumer_write_valid,
+    input wire [ADDR_BITS-1:0] consumer_write_address [NUM_CONSUMERS-1:0],
+    input wire [DATA_BITS-1:0] consumer_write_data [NUM_CONSUMERS-1:0],
+    output logic [NUM_CONSUMERS-1:0] consumer_write_ready,
 
     // Memory Interface (Data / Program)
-    output reg [NUM_CHANNELS-1:0] mem_read_valid,
-    output reg [ADDR_BITS-1:0] mem_read_address [NUM_CHANNELS-1:0],
-    input reg [NUM_CHANNELS-1:0] mem_read_ready,
-    input reg [DATA_BITS-1:0] mem_read_data [NUM_CHANNELS-1:0],
-    output reg [NUM_CHANNELS-1:0] mem_write_valid,
-    output reg [ADDR_BITS-1:0] mem_write_address [NUM_CHANNELS-1:0],
-    output reg [DATA_BITS-1:0] mem_write_data [NUM_CHANNELS-1:0],
-    input reg [NUM_CHANNELS-1:0] mem_write_ready
+    output logic [NUM_CHANNELS-1:0] mem_read_valid,
+    output logic [ADDR_BITS-1:0] mem_read_address [NUM_CHANNELS-1:0],
+    input logic [NUM_CHANNELS-1:0] mem_read_ready,
+    input wire [DATA_BITS-1:0] mem_read_data [NUM_CHANNELS-1:0],
+    output logic [NUM_CHANNELS-1:0] mem_write_valid,
+    output logic [ADDR_BITS-1:0] mem_write_address [NUM_CHANNELS-1:0],
+    output logic [DATA_BITS-1:0] mem_write_data [NUM_CHANNELS-1:0],
+    input logic [NUM_CHANNELS-1:0] mem_write_ready
 );
     localparam IDLE = 3'b000, 
         READ_WAITING = 3'b010, 
@@ -42,27 +42,27 @@ module controller #(
         WRITE_RELAYING = 3'b101;
 
     // Keep track of state for each channel and which jobs each channel is handling
-    reg [2:0] controller_state [NUM_CHANNELS-1:0];
-    reg [$clog2(NUM_CONSUMERS)-1:0] current_consumer [NUM_CHANNELS-1:0]; // Which consumer is each channel currently serving
-    reg [NUM_CONSUMERS-1:0] channel_serving_consumer; // Which channels are being served? Prevents many workers from picking up the same request.
+    logic [2:0] controller_state [NUM_CHANNELS-1:0];
+    logic [$clog2(NUM_CONSUMERS)-1:0] current_consumer [NUM_CHANNELS-1:0]; // Which consumer is each channel currently serving
+    logic [NUM_CONSUMERS-1:0] channel_serving_consumer; // Which channels are being served? Prevents many workers from picking up the same request.
 
     always @(posedge clk) begin
         if (reset) begin 
-            mem_read_valid <= 0;
-            mem_read_address <= 0;
+            mem_read_valid <= 1'b0;
+            mem_read_address <= '{default: '0};
 
-            mem_write_valid <= 0;
-            mem_write_address <= 0;
-            mem_write_data <= 0;
+            mem_write_valid <= 1'b0;
+            mem_write_address <= '{default: '0};
+            mem_write_data <= '{default: '0};
 
-            consumer_read_ready <= 0;
-            consumer_read_data <= 0;
-            consumer_write_ready <= 0;
+            consumer_read_ready <= 1'b0;
+            consumer_read_data <= '{default: '0};
+            consumer_write_ready <= 1'b0;
 
-            current_consumer <= 0;
-            controller_state <= 0;
+            current_consumer <= '{default: '0};
+            controller_state <= '{default: '0};
 
-            channel_serving_consumer = 0;
+            channel_serving_consumer <= '{default: '0};
         end else begin 
             // For each channel, we handle processing concurrently
             for (int i = 0; i < NUM_CHANNELS; i = i + 1) begin 

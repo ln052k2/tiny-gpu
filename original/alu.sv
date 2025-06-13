@@ -1,4 +1,4 @@
-`default_nettype none
+// `default_nettype none
 `timescale 1ns/1ns
 
 // ARITHMETIC-LOGIC UNIT
@@ -11,13 +11,13 @@ module alu (
     input wire reset,
     input wire enable, // If current block has less threads then block size, some ALUs will be inactive
 
-    input reg [2:0] core_state,
+    input logic [2:0] core_state,
 
-    input reg [1:0] decoded_alu_arithmetic_mux,
-    input reg decoded_alu_output_mux,
+    input logic [1:0] decoded_alu_arithmetic_mux,
+    input logic decoded_alu_output_mux,
 
-    input reg [7:0] rs,
-    input reg [7:0] rt,
+    input logic [7:0] rs,
+    input logic [7:0] rt,
     output wire [7:0] alu_out
 );
     localparam ADD = 2'b00,
@@ -25,7 +25,7 @@ module alu (
         MUL = 2'b10,
         DIV = 2'b11;
 
-    reg [7:0] alu_out_reg;
+    logic [7:0] alu_out_reg;
     assign alu_out = alu_out_reg;
 
     always @(posedge clk) begin 
