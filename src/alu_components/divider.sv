@@ -78,13 +78,15 @@ always_ff @(posedge clk, posedge reset) begin
             // since we used combinational logic to calculate the new quotient and remainder, we just store this value in the register
             AQ_reg <= AQ_next;
             // we're finished when the 1 has shifted out of the counter
-            if (counter === '0) state <= DONE;
+            if (counter === '0) begin
+                state <= DONE;
+                done <= 1'b1;
+            end
             counter <= (counter << 1);
         end
         DONE: begin
             `VERBOSE(("step %0d, quotient %b, remainder %b",c,AQ_reg.quotient,AQ_reg.remainder));
             `VERBOSE(("took %0d, result: %0d (%0b)", c, result, result));
-            done <= 1'b1;
             state <= IDLE;
         end
     endcase

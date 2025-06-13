@@ -125,10 +125,18 @@ module gpu #(
         .consumer_read_address(fetcher_read_address),
         .consumer_read_ready(fetcher_read_ready),
         .consumer_read_data(fetcher_read_data),
+        .consumer_write_ready(),
+        .consumer_write_data(),
+        .consumer_write_address(),
+        .consumer_write_valid(),
 
         .mem_read_valid(program_mem_read_valid),
         .mem_read_address(program_mem_read_address),
         .mem_read_ready(program_mem_read_ready),
+        .mem_write_ready(),
+        .mem_write_address(),
+        .mem_write_valid(),
+        .mem_write_data(),
         .mem_read_data(program_mem_read_data)
     );
 

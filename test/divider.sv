@@ -15,7 +15,7 @@ module test_divider;
   logic done;
 
   // Instantiate DUT and assertion wrapper
-  divider #(.N(N), .verbose_flag(0)) dut (
+  divider #(.N(N), .verbose_flag(1)) dut (
     .clk      (clk),
     .reset    (reset),
     .start    (start),
@@ -24,9 +24,7 @@ module test_divider;
     .result   (result),
     .done     (done)
   );
-  `ifndef QUIET
 bind dut divider_assertions dut_assert(.*);
-`endif
   always #5 clk = ~clk;
 
   initial begin

@@ -39,7 +39,7 @@ module alu (
     logic div_start;
     wire [7:0] div_result;
     wire div_done;
-    divider #(8) divider_unit(.clk(clk), .reset(reset), .start(div_start), .dividend(rs), .divisor(rt), .result(div_result), .done(div_done));
+    divider #(.N(8)) divider_unit(.clk(clk), .reset(reset), .start(div_start), .dividend(rs), .divisor(rt), .result(div_result), .done(div_done));
     // bind assertions model, if we should
     `ifndef SILENT
         bind divider_unit divider_assertions divider_assertions_unit(.*);
