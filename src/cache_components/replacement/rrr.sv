@@ -14,7 +14,7 @@ module round_robin_replacement #(
   // pulse high for exactly one cycle when you decide to evict
   input logic evict_req,
   // which way should be evicted this cycle?
-  output logic [WAY_BITS-1:0] victim_way;
+  output logic [WAY_BITS-1:0] victim_way
 );
 
   // one pointer per set

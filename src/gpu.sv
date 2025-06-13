@@ -79,8 +79,7 @@ module gpu #(
     cache #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(NUM_LSUS),
-        .CACHE_LINES(64)
+        .CONSUMERS(NUM_LSUS)
     ) global_data_cache (
         .clk(clk),
         .reset(reset),
@@ -162,8 +161,7 @@ module gpu #(
             cache #(
                 .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
                 .DATA_BITS(PROGRAM_MEM_ADDR_BITS),
-                .CHANNELS(1),
-                .CACHE_LINES(64)
+                .CONSUMERS(1)
             ) icache (
                 .clk(clk),
                 .reset(reset),

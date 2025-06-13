@@ -1,4 +1,4 @@
-grc/pkg/alu_ops_pkg.sv
+src/pkg/alu_ops_pkg.sv
 src/pkg/alu_state_pkg.sv
 src/pkg/cache_state_pkg.sv
 src/pkg/controller_states_pkg.sv

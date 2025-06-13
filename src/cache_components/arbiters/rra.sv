@@ -1,5 +1,5 @@
 module round_robin_arbiter #(
-    parameter int N = 4,
+    parameter int N = 4
 )(
     input logic [N-1:0] requests,
     input logic active,
@@ -9,21 +9,22 @@ module round_robin_arbiter #(
 );
 
 logic [$clog2(N)-1:0] last_grant;
-logic [$clog2(N)-1:0] next_grant;
+logic [$clog2(N):0] next_grant;
 logic grant_valid;
 logic [N-1:0] rotated;
-
+logic [$clog2(N)-1:0] shift;
 always_comb begin
-    int unsigned shift = (last_grant + 1) % N;
+    shift = last_grant + 1;
+    if(shift == N) shift = 0;
     // rotate requests vector
-    rotated = (requests << shift) | (requests >> (N - shift));
+    rotated = (requests >> shift) | (requests << (N - shift));
     grant_valid = 1'b0;
     next_grant = last_grant;
-    // 
     for (int i = 0; i < N; i++) begin
         if (!grant_valid && rotated[i]) begin
             grant_valid = 1'b1;
-            next_grant = (shift + i) % N;
+            next_grant = (shift + i);
+            if (next_grant >= N) next_grant = next_grant - N;
         end
     end
 end

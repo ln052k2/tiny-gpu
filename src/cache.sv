@@ -8,16 +8,30 @@ module cache #(
     parameter ARBITRATOR = "rr",
     parameter REPLACEMENT_POLICY = "rr",
     parameter WRITE_THROUGH_POLICY = 0, // default - write-back
-    parameter WRITE_ALLOCATE_POLICY = 1
+    parameter WRITE_ALLOCATE_POLICY = 0
 )(
     input wire clk,
     input wire reset,
 
-    memory_if.consumer consumer_if,
+    mem_if.consumer consumer_if,
 
     // To Global Memory
     mem_if.mem memory_if
 );
+int i;
+always_ff @(posedge clk)
+    for(i=0; i<CONSUMERS; i++) begin
+        memory_if.read_address[0] <= consumer_if.read_address[i];
+        memory_if.write_address[0] <= consumer_if.write_address[i];
+        memory_if.write_data[0] <= consumer_if.write_data[i];
+        memory_if.write_valid[0] <= consumer_if.write_valid[i];
+        memory_if.read_valid[0] <= consumer_if.read_valid[i];
+        consumer_if.read_ready[i] <= memory_if.read_ready[0];
+        consumer_if.read_data[i] <= memory_if.read_data[0];
+        consumer_if.write_ready[i] <= memory_if.write_ready[0];
+    end
+endmodule
+`ifdef notdef
 
 import cache_state_pkg::*;
 
@@ -43,12 +57,13 @@ logic [ADDR_BITS-1:0] addr_raw;
 // break down address into components
 
 typedef struct packed {
-    logic [TAG_BITS-1:0] tag,
-    logic [(SET_BITS?SET_BITS:1)-1:0] set,
-    logic [(OFFSET_BITS?OFFSET_BITS:1)-1:0] offset
+    logic [TAG_BITS-1:0] tag;
+    logic [(SET_BITS?SET_BITS:1)-1:0] set;
+    logic [(OFFSET_BITS?OFFSET_BITS:1)-1:0] offset;
 } addr_components_t;
 
 function addr_components_t breakdown(input logic [ADDR_BITS-1:0] addr);
+addr_components_t result;
 begin
     if (OFFSET_BITS > 0)
         result.offset = addr[OFFSET_BITS-1:0];
@@ -72,8 +87,8 @@ assign addr_components = breakdown(addr_raw);
 // generate arbiter based on parameters
 // this allows the arbiter itself to be swapped out easily
 
-wire [$clog2(CONSUMERS)-1] grant_idx;
-logic [$clog2(CONSUMERS) -1]  grant_idx_reg;
+wire [$clog2(CONSUMERS ? CONSUMERS : 1)-1:0] grant_idx;
+logic [$clog2(CONSUMERS ? CONSUMERS : 1) -1:0]  grant_idx_reg;
 wire [CONSUMERS-1:0] requests_vec = (consumer_if.read_valid|consumer_if.write_valid);
 
 bit must_evict;
@@ -90,10 +105,10 @@ generate
         "rr":
             round_robin_arbiter #(.N(CONSUMERS)) rra(
                 .requests(requests_vec),
-                .grants(grant_idx), 
+                .grant(grant_idx), 
                 .active(state==IDLE),
                 .clk(clk), 
-                .reset(reset),
+                .reset(reset)
             );
         default: initial $fatal("Invalid arbitrator");
         endcase
@@ -138,9 +153,10 @@ logic [$clog2(WAYS)-1:0] hit_way;
 logic [DATA_BITS-1:0] tmp_data;
 
 // determine if there is a free spot in the current way
-wire [$clog2(WAYS)-1:0] write_way;
+logic [$clog2(WAYS)-1:0] write_way;
+bit evict;
 always_comb begin
-    bit evict = '1;
+    evict = '1;
     write_way = '0;
     for (logic [$clog2(WAYS)-1:0] w=0; w<WAYS; w++) begin
         if(!cache[addr_components.set][w].valid) begin
@@ -158,6 +174,7 @@ always_comb begin
 end
 // control FSM
 always_ff @(posedge clk or posedge reset) begin
+    $display("%s", state);
     if (reset) begin
         // clear
         for (int i=0; i<SETS; i++)
@@ -187,7 +204,7 @@ always_ff @(posedge clk or posedge reset) begin
                     if(CONSUMERS==1) begin
                         hit<=0;
                         state <= LOOKUP;
-                        addr_raw <= consumer_if.addr[0];
+                        addr_raw <= consumer_if.read_valid[0] ? consumer_if.read_address[0] : consumer_if.write_address[0];
                         read_op <= consumer_if.read_valid[0];
                     end else begin
                         state <= WAIT_ARBITRATION;
@@ -196,7 +213,7 @@ always_ff @(posedge clk or posedge reset) begin
             end
 
             WAIT_ARBITRATION: begin
-                addr_raw <= consumer_if.addr[grant_idx];
+                addr_raw <= consumer_if.read_valid[grant_idx] ? consumer_if.read_address[grant_idx] : consumer_if.write_address[grant_idx];
                 // since we know read_valid | write_valid was asserted, this is fine
                 read_op <= consumer_if.read_valid[grant_idx]; 
                 grant_idx_reg <= grant_idx;
@@ -248,8 +265,8 @@ always_ff @(posedge clk or posedge reset) begin
                     state <= REFILL_CACHE;
                     then_state <= HIT;
                 end else begin
-                    // write-allocate
-                    state <= WRITE_ALLOCATE;
+                    // write-allocate (not implemented)
+                    state <= IDLE;
                 end
                 
 
@@ -278,12 +295,12 @@ always_ff @(posedge clk or posedge reset) begin
                 memory_if.write_data[0] <= tmp_data;
                 if(hit)
                     // if writing through a hit, write to the requested location
-                    memory_if.write_addr[0] <= addr_raw;
+                    memory_if.write_address[0] <= addr_raw;
                 else
                     if(SETS>1)
-                        memory_if.write_addr[0] <= {cache[addr_components.set][write_way].tag,addr_components.set} << OFFSET_BITS;
+                        memory_if.write_address[0] <= {cache[addr_components.set][write_way].tag,addr_components.set} << OFFSET_BITS;
                     else 
-                        memory_if.write_addr[0] <= {cache[addr_components.set][write_way].tag} << OFFSET_BITS;
+                        memory_if.write_address[0] <= {cache[addr_components.set][write_way].tag} << OFFSET_BITS;
                 state <= WRITE_MEM; // stay until memory ready
                 if(memory_if.write_ready[0]) begin
                     memory_if.write_valid[0] <= '0;
@@ -296,7 +313,7 @@ always_ff @(posedge clk or posedge reset) begin
             REFILL_CACHE: begin
                 // request data from memory
                 memory_if.read_valid[0] <= 1;
-                memory_if.read_addr[0] <= addr_raw;
+                memory_if.read_address[0] <= addr_raw;
                 state <= REFILL_CACHE; // stay until memory ready
                 if (memory_if.read_ready[0]) begin
                     if (read_op)
@@ -337,3 +354,4 @@ end
 
 
 endmodule
+`endif
