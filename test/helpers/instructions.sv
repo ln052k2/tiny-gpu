@@ -68,7 +68,7 @@ class InstrCoverage;
     logic [3:0] prev_opcode;
 
     covergroup cg;
-        coverpoint f.opcode {
+        f_opcode: coverpoint f.opcode {
             bins nop    = {4'b0000};
             bins br     = {4'b0001};
             bins cmp    = {4'b0010};
@@ -87,25 +87,25 @@ class InstrCoverage;
             bins const_then_arith = (4'b1001 => 4'b0011, 4'b0100); // CONST then arithmetic
         }
 
-        coverpoint f.rd {
+        f_rd: coverpoint f.rd {
             bins rd_vals[] = {[0:15]};
         }
         
-        coverpoint f.rs {
+        f_rs: coverpoint f.rs {
             bins rs_vals[] = {[0:15]};
         }
         
-        coverpoint f.rt {
+        f_rt: coverpoint f.rt {
             bins rt_vals[] = {[0:15]};
         }
         
-        coverpoint f.imm8 {
+        f_imm8: coverpoint f.imm8 {
             bins zero  = {8'd0};
             bins max   = {8'd255};
             bins middle   = {[1:254]};
         }
         
-        coverpoint f.nzp {
+        f_nzp: coverpoint f.nzp {
             bins none  = {3'b000};
             bins n     = {3'b100};
             bins z     = {3'b010};
@@ -171,10 +171,10 @@ class InstrCoverage;
         $display("Register RT Coverage: %.2f%%", cg.f_rt.get_coverage());
         $display("Immediate Coverage: %.2f%%", cg.f_imm8.get_coverage());
         $display("NZP Coverage: %.2f%%", cg.f_nzp.get_coverage());
-        $display("Opcode-RD Cross: %.2f%%", cg.opcode_rd_cross.get_coverage());
-        $display("Opcode-RS Cross: %.2f%%", cg.opcode_rs_cross.get_coverage());
-        $display("Opcode-IMM Cross: %.2f%%", cg.opcode_imm_cross.get_coverage());
-        $display("Opcode-NZP Cross: %.2f%%", cg.opcode_nzp_cross.get_coverage());
+        // $display("Opcode-RD Cross: %.2f%%", cg.opcode_rd_cross.get_coverage());
+        // $display("Opcode-RS Cross: %.2f%%", cg.opcode_rs_cross.get_coverage());
+        // $display("Opcode-IMM Cross: %.2f%%", cg.opcode_imm_cross.get_coverage());
+        // $display("Opcode-NZP Cross: %.2f%%", cg.opcode_nzp_cross.get_coverage());
         $display("====================================");
     endtask
 endclass
