@@ -1,5 +1,6 @@
 test/helpers/memory.sv
 test/helpers/instructions.sv
+test/helpers/memoryif.sv
 test/test_matadd.sv
 test/test_generic.sv
 test/test_cache.sv
