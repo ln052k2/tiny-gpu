@@ -72,10 +72,13 @@ endgenerate
 // Arbitration - only one channel can use memory interface at a time
 logic [$clog2(CHANNELS)-1:0] current_grant;
 logic [CHANNELS-1:0] needs_memory;
+logic memory_busy;
 
 // Channels that need memory access (misses or writes)
 assign needs_memory = ((cache_if.read_valid & ~cache_hits_read) | 
                        cache_if.write_valid) & ~channel_waiting_for_memory;
+
+assign memory_busy = data_mem_if.read_valid[0] || data_mem_if.write_valid[0];
 
 // Fixed: Single always_ff block for arbitration
 int candidate;
@@ -83,8 +86,8 @@ always_ff @(posedge clk or posedge reset) begin
     if (reset) begin
         current_grant <= 0;
     end else begin
-        // Only advance grant if current granted channel is done or no memory request active
-        if (!data_mem_if.read_valid[0] && !data_mem_if.write_valid[0]) begin
+        // Only advance grant when memory is free AND we need to find a new channel
+        if (!memory_busy) begin
             for (int j = 1; j <= CHANNELS; j++) begin
                 candidate = (current_grant + j) % CHANNELS;
                 if (needs_memory[candidate]) begin
@@ -144,72 +147,90 @@ always_ff @(posedge clk or posedge reset) begin
             end
         end
         
-        // Handle memory interface for misses and write-through
+        // Handle memory interface - clear ready signals first
+        for (int i = 0; i < CHANNELS; i++) begin
+            if (channel_waiting_for_memory[i] && i != current_grant) begin
+                cache_if.read_ready[i] <= 1'b0;
+                cache_if.write_ready[i] <= 1'b0;
+            end
+        end
+
+        // Handle memory completions
         if (data_mem_if.read_ready[0] && data_mem_if.read_valid[0]) begin
-            // Memory read completed
-            logic [LINE_INDEX_BITS-1:0] resp_index;
-            logic [TAG_BITS-1:0] resp_tag;
-            resp_index = request_queue[current_grant].addr[LINE_INDEX_BITS-1:0];
-            resp_tag = request_queue[current_grant].addr[ADDR_BITS-1:LINE_INDEX_BITS];
-            
-            // Update cache
-            cache_mem[resp_index].valid <= 1'b1;
-            cache_mem[resp_index].tag <= resp_tag;
-            cache_mem[resp_index].data <= data_mem_if.read_data[0];
-            
-            // Respond to requesting channel
-            cache_if.read_data[current_grant] <= data_mem_if.read_data[0];
-            cache_if.read_ready[current_grant] <= 1'b1;
-            
-            // Clear memory request
+            // Memory read completed - find which channel was waiting
+            for (int i = 0; i < CHANNELS; i++) begin
+                if (channel_waiting_for_memory[i] && request_queue[i].valid && !request_queue[i].is_write) begin
+                    logic [LINE_INDEX_BITS-1:0] resp_index;
+                    logic [TAG_BITS-1:0] resp_tag;
+                    resp_index = request_queue[i].addr[LINE_INDEX_BITS-1:0];
+                    resp_tag = request_queue[i].addr[ADDR_BITS-1:LINE_INDEX_BITS];
+                    
+                    // Update cache
+                    cache_mem[resp_index].valid <= 1'b1;
+                    cache_mem[resp_index].tag <= resp_tag;
+                    cache_mem[resp_index].data <= data_mem_if.read_data[0];
+                    
+                    // Respond to requesting channel
+                    cache_if.read_data[i] <= data_mem_if.read_data[0];
+                    cache_if.read_ready[i] <= 1'b1;
+                    
+                    // Clear request state
+                    request_queue[i].valid <= 1'b0;
+                    channel_waiting_for_memory[i] <= 1'b0;
+                    break;
+                end
+            end
+            // Clear memory interface
             data_mem_if.read_valid[0] <= 1'b0;
-            request_queue[current_grant].valid <= 1'b0;
-            channel_waiting_for_memory[current_grant] <= 1'b0;
             
         end else if (data_mem_if.write_ready[0] && data_mem_if.write_valid[0]) begin
-            // Memory write completed
-            cache_if.write_ready[current_grant] <= 1'b1;
-            
-            // Clear memory request
+            // Memory write completed - find which channel was waiting
+            for (int i = 0; i < CHANNELS; i++) begin
+                if (channel_waiting_for_memory[i] && request_queue[i].valid && request_queue[i].is_write) begin
+                    // Respond to requesting channel
+                    cache_if.write_ready[i] <= 1'b1;
+                    
+                    // Clear request state
+                    request_queue[i].valid <= 1'b0;
+                    channel_waiting_for_memory[i] <= 1'b0;
+                    break;
+                end
+            end
+            // Clear memory interface
             data_mem_if.write_valid[0] <= 1'b0;
-            request_queue[current_grant].valid <= 1'b0;
-            channel_waiting_for_memory[current_grant] <= 1'b0;
             
-        end else begin
-            // Start new memory requests
-            if (needs_memory[current_grant] && !request_queue[current_grant].valid) begin
-                // Buffer the request
-                request_queue[current_grant].valid <= 1'b1;
-                channel_waiting_for_memory[current_grant] <= 1'b1;
+        end else if (!memory_busy && needs_memory[current_grant]) begin
+            // Start new memory request for current granted channel
+            request_queue[current_grant].valid <= 1'b1;
+            channel_waiting_for_memory[current_grant] <= 1'b1;
+            
+            if (cache_if.read_valid[current_grant] && !cache_hits_read[current_grant]) begin
+                // Read miss
+                request_queue[current_grant].is_write <= 1'b0;
+                request_queue[current_grant].addr <= cache_if.read_address[current_grant];
+                data_mem_if.read_valid[0] <= 1'b1;
+                data_mem_if.read_address[0] <= cache_if.read_address[current_grant];
+                cache_if.read_ready[current_grant] <= 1'b0;
                 
-                if (cache_if.read_valid[current_grant] && !cache_hits_read[current_grant]) begin
-                    // Read miss
-                    request_queue[current_grant].is_write <= 1'b0;
-                    request_queue[current_grant].addr <= cache_if.read_address[current_grant];
-                    data_mem_if.read_valid[0] <= 1'b1;
-                    data_mem_if.read_address[0] <= cache_if.read_address[current_grant];
-                    cache_if.read_ready[current_grant] <= 1'b0;
-                    
-                end else if (cache_if.write_valid[current_grant]) begin
-                    // Write (miss or hit with write-through)
-                    request_queue[current_grant].is_write <= 1'b1;
-                    request_queue[current_grant].addr <= cache_if.write_address[current_grant];
-                    request_queue[current_grant].data <= cache_if.write_data[current_grant];
-                    data_mem_if.write_valid[0] <= 1'b1;
-                    data_mem_if.write_address[0] <= cache_if.write_address[current_grant];
-                    data_mem_if.write_data[0] <= cache_if.write_data[current_grant];
-                    cache_if.write_ready[current_grant] <= 1'b0;
-                    
-                    // For write miss, update cache too
-                    if (!cache_hits_write[current_grant]) begin
-                        logic [LINE_INDEX_BITS-1:0] wr_index;
-                        logic [TAG_BITS-1:0] wr_tag;
-                        wr_index = cache_if.write_address[current_grant][LINE_INDEX_BITS-1:0];
-                        wr_tag = cache_if.write_address[current_grant][ADDR_BITS-1:LINE_INDEX_BITS];
-                        cache_mem[wr_index].valid <= 1'b1;
-                        cache_mem[wr_index].tag <= wr_tag;
-                        cache_mem[wr_index].data <= cache_if.write_data[current_grant];
-                    end
+            end else if (cache_if.write_valid[current_grant]) begin
+                // Write (miss or hit with write-through)
+                request_queue[current_grant].is_write <= 1'b1;
+                request_queue[current_grant].addr <= cache_if.write_address[current_grant];
+                request_queue[current_grant].data <= cache_if.write_data[current_grant];
+                data_mem_if.write_valid[0] <= 1'b1;
+                data_mem_if.write_address[0] <= cache_if.write_address[current_grant];
+                data_mem_if.write_data[0] <= cache_if.write_data[current_grant];
+                cache_if.write_ready[current_grant] <= 1'b0;
+                
+                // For write miss, update cache too
+                if (!cache_hits_write[current_grant]) begin
+                    logic [LINE_INDEX_BITS-1:0] wr_index;
+                    logic [TAG_BITS-1:0] wr_tag;
+                    wr_index = cache_if.write_address[current_grant][LINE_INDEX_BITS-1:0];
+                    wr_tag = cache_if.write_address[current_grant][ADDR_BITS-1:LINE_INDEX_BITS];
+                    cache_mem[wr_index].valid <= 1'b1;
+                    cache_mem[wr_index].tag <= wr_tag;
+                    cache_mem[wr_index].data <= cache_if.write_data[current_grant];
                 end
             end
         end
