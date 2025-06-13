@@ -29,15 +29,15 @@ module core #(
     input logic program_mem_read_ready,
     input logic [PROGRAM_MEM_DATA_BITS-1:0] program_mem_read_data,
 
-    // Data Memory
-    output logic [THREADS_PER_BLOCK-1:0] data_mem_read_valid,
-    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address [THREADS_PER_BLOCK-1:0],
-    input logic [THREADS_PER_BLOCK-1:0] data_mem_read_ready,
-    input wire [DATA_MEM_DATA_BITS-1:0] data_mem_read_data [THREADS_PER_BLOCK-1:0],
-    output logic [THREADS_PER_BLOCK-1:0] data_mem_write_valid,
-    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address [THREADS_PER_BLOCK-1:0],
-    output logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data [THREADS_PER_BLOCK-1:0],
-    input logic [THREADS_PER_BLOCK-1:0] data_mem_write_ready
+    // Data Memory -- only single channel now since cache consolidated
+    output logic data_mem_read_valid,
+    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_read_address,
+    input logic data_mem_read_ready,
+    input wire [DATA_MEM_DATA_BITS-1:0] data_mem_read_data,
+    output logic data_mem_write_valid,
+    output logic [DATA_MEM_ADDR_BITS-1:0] data_mem_write_address,
+    output logic [DATA_MEM_DATA_BITS-1:0] data_mem_write_data,
+    input logic data_mem_write_ready
 );
     // State
     logic [2:0] core_state;
@@ -71,6 +71,48 @@ module core #(
     logic decoded_pc_mux;                     // Select source of next PC
     logic decoded_ret;
 
+    // Internal LSU <-> Cache signals
+    logic [THREADS_PER_BLOCK-1:0] lsu_read_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] lsu_read_address [THREADS_PER_BLOCK-1:0];
+    logic [THREADS_PER_BLOCK-1:0] lsu_read_ready;
+    logic [DATA_MEM_DATA_BITS-1:0] lsu_read_data [THREADS_PER_BLOCK-1:0];
+    logic [THREADS_PER_BLOCK-1:0] lsu_write_valid;
+    logic [DATA_MEM_ADDR_BITS-1:0] lsu_write_address [THREADS_PER_BLOCK-1:0];
+    logic [DATA_MEM_DATA_BITS-1:0] lsu_write_data [THREADS_PER_BLOCK-1:0];
+    logic [THREADS_PER_BLOCK-1:0] lsu_write_ready;
+    
+    cache #(
+        .CACHE_SIZE(16),
+        .ADDR_BITS(DATA_MEM_ADDR_BITS),
+        .DATA_BITS(DATA_MEM_DATA_BITS),
+        .THREADS_PER_BLOCK(THREADS_PER_BLOCK)
+    ) l1_cache (
+        .clk(clk),
+        .reset(reset),
+        
+        // Connect to LSUs (internal)
+        .lsu_read_valid(lsu_read_valid),
+        .lsu_read_address(lsu_read_address),
+        .lsu_read_ready(lsu_read_ready),
+        .lsu_read_data(lsu_read_data),
+        .lsu_write_valid(lsu_write_valid),
+        .lsu_write_address(lsu_write_address),
+        .lsu_write_data(lsu_write_data),
+        .lsu_write_ready(lsu_write_ready),
+        
+        // Connect to external data memory controller
+        .mem_read_valid(data_mem_read_valid),
+        .mem_read_address(data_mem_read_address),
+        .mem_read_ready(data_mem_read_ready),
+        .mem_read_data(data_mem_read_data),
+        .mem_write_valid(data_mem_write_valid),
+        .mem_write_address(data_mem_write_address),
+        .mem_write_data(data_mem_write_data),
+        .mem_write_ready(data_mem_write_ready),
+        
+        .cache_flush(start)  // Flush cache when starting new block
+    );
+    
     // Fetcher
     fetcher #(
         .PROGRAM_MEM_ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -153,14 +195,15 @@ module core #(
                 .core_state(core_state),
                 .decoded_mem_read_enable(decoded_mem_read_enable),
                 .decoded_mem_write_enable(decoded_mem_write_enable),
-                .mem_read_valid(data_mem_read_valid[i]),
-                .mem_read_address(data_mem_read_address[i]),
-                .mem_read_ready(data_mem_read_ready[i]),
-                .mem_read_data(data_mem_read_data[i]),
-                .mem_write_valid(data_mem_write_valid[i]),
-                .mem_write_address(data_mem_write_address[i]),
-                .mem_write_data(data_mem_write_data[i]),
-                .mem_write_ready(data_mem_write_ready[i]),
+                // Connect to cache instead of external memory
+                .mem_read_valid(lsu_read_valid[i]),
+                .mem_read_address(lsu_read_address[i]),
+                .mem_read_ready(lsu_read_ready[i]),
+                .mem_read_data(lsu_read_data[i]),
+                .mem_write_valid(lsu_write_valid[i]),
+                .mem_write_address(lsu_write_address[i]),
+                .mem_write_data(lsu_write_data[i]),
+                .mem_write_ready(lsu_write_ready[i]),
                 .rs(rs[i]),
                 .rt(rt[i]),
                 .lsu_state(lsu_state[i]),
