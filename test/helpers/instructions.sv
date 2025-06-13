@@ -86,7 +86,34 @@ class InstrCoverage;
             bins all   = {3'b111};
         }
 
-        opcode_rd_cross: cross f.opcode, f.rd;
+
+        opcode_rd_cross: cross f.opcode, f.rd; // test all opcodes w/ possible rd
+        opcode_rs_cross: cross f.opcode, f.rs; // test all opcodes w/ possible rs
+        opcode_imm_cross: cross f.opcode, f.imm8 {
+            ignore_bins ignore_non_imm = opcode_imm_cross with 
+                (f.opcode != 4'b0001 && f.opcode != 4'b1001);
+        } // tracks combinations of opcode and immediate values
+
+        // Track instruction sequences
+        logic [3:0] prev_opcode;
+        coverpoint f.opcode {
+            bins load_store_seq = (4'b0111 => 4'b1000); // LDR followed by STR
+            bins arith_seq = (4'b0011, 4'b0100, 4'b0101, 4'b0110 => 4'b0010); // Math then CMP
+        }
+
+        // Simulate "realistic" program
+        constraint opcode_c {
+        opcode dist {
+            4'b0011 := 20,
+            4'b0100 := 20,
+            4'b0111 := 15,
+            4'b1000 := 15,
+            [4'b0000:4'b0010] := 5,
+            4'b1111 := 1
+        };
+    }
+
+
     endgroup
 
     function new();

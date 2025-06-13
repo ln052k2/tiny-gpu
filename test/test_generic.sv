@@ -158,6 +158,26 @@ module test_generic;
         $display("Completed in %0d cycles", cycles);
         data_memory.display(16);
 
+        // Generate coverage report
+        $display("\n========================================");
+        $display("COVERAGE REPORT");
+        $display("========================================");
+        $display("Instruction Coverage: %.2f%%", coverage.cg.get_inst_coverage());
+
+        // Print detailed coverage per coverpoint
+        $display("\nOpcode Coverage: %.2f%%", coverage.cg.opcode.get_coverage());
+        $display("Register RD Coverage: %.2f%%", coverage.cg.rd.get_coverage());
+        $display("Register RS Coverage: %.2f%%", coverage.cg.rs.get_coverage());
+        $display("Register RT Coverage: %.2f%%", coverage.cg.rt.get_coverage());
+        $display("Immediate Coverage: %.2f%%", coverage.cg.imm8.get_coverage());
+        $display("NZP Coverage: %.2f%%", coverage.cg.nzp.get_coverage());
+        $display("Cross Coverage (opcode_rd): %.2f%%", coverage.cg.opcode_rd_cross.get_coverage());
+
+        // Optional: Generate coverage database
+        $coverage_save("coverage.db");
+        $display("\nCoverage database saved to coverage.db");
+        $display("========================================\n");
+
         $finish;
     end
 endmodule
