@@ -102,9 +102,7 @@ class InstrCoverage;
         coverpoint f.imm8 {
             bins zero  = {8'd0};
             bins max   = {8'd255};
-            bins small = {[1:15]};
-            bins med   = {[16:127]};
-            bins large = {[128:254]};
+            bins middle   = {[1:254]};
         }
         
         coverpoint f.nzp {
