@@ -5,7 +5,6 @@
 // > Receives memory requests from all cores
 // > Throttles requests based on limited external memory bandwidth
 // > Waits for responses from external memory and distributes them back to cores
-
 module controller #(
     parameter ADDR_BITS = 8,
     parameter DATA_BITS = 16,
@@ -19,31 +18,34 @@ module controller #(
     // Consumer Interface (Fetchers / LSUs)
     mem_if.consumer consumer_if,
     // Memory Interface (Data / Program)
-    mem_if.mem memory_if
+    mem_if.mem mem_if
 );
-
-    import controller_states_pkg::*;
+    localparam IDLE = 3'b000, 
+        READ_WAITING = 3'b010, 
+        WRITE_WAITING = 3'b011,
+        READ_RELAYING = 3'b100,
+        WRITE_RELAYING = 3'b101;
 
     // Keep track of state for each channel and which jobs each channel is handling
-    controller_state_e controller_state [NUM_CHANNELS-1:0];
+    logic [2:0] controller_state [NUM_CHANNELS-1:0];
     logic [$clog2(NUM_CONSUMERS)-1:0] current_consumer [NUM_CHANNELS-1:0]; // Which consumer is each channel currently serving
     logic [NUM_CONSUMERS-1:0] channel_serving_consumer; // Which channels are being served? Prevents many workers from picking up the same request.
 
     always @(posedge clk) begin
         if (reset) begin 
-            memory_if.read_valid <= 1'b0;
-            memory_if.read_address <= '{default: '0};
+            mem_if.read_valid <= 1'b0;
+            mem_if.read_address <= '{default: '0};
 
-            memory_if.write_valid <= 1'b0;
-            memory_if.write_address <= '{default: '0};
-            memory_if.write_data <= '{default: '0};
+            mem_if.write_valid <= 1'b0;
+            mem_if.write_address <= '{default: '0};
+            mem_if.write_data <= '{default: '0};
 
             consumer_if.read_ready <= 1'b0;
             consumer_if.read_data <= '{default: '0};
             consumer_if.write_ready <= 1'b0;
 
             current_consumer <= '{default: '0};
-            controller_state <= '{default: IDLE};
+            controller_state <= '{default: '0};
 
             channel_serving_consumer <= '{default: '0};
         end else begin 
@@ -57,8 +59,8 @@ module controller #(
                                 channel_serving_consumer[j] = 1;
                                 current_consumer[i] <= j;
 
-                                memory_if.read_valid[i] <= 1;
-                                memory_if.read_address[i] <= consumer_if.read_address[j];
+                                mem_if.read_valid[i] <= 1;
+                                mem_if.read_address[i] <= consumer_if.read_address[j];
                                 controller_state[i] <= READ_WAITING;
 
                                 // Once we find a pending request, pick it up with this channel and stop looking for requests
@@ -67,9 +69,9 @@ module controller #(
                                 channel_serving_consumer[j] = 1;
                                 current_consumer[i] <= j;
 
-                                memory_if.write_valid[i] <= 1;
-                                memory_if.write_address[i] <= consumer_if.write_address[j];
-                                memory_if.write_data[i] <= consumer_if.write_data[j];
+                                mem_if.write_valid[i] <= 1;
+                                mem_if.write_address[i] <= consumer_if.write_address[j];
+                                mem_if.write_data[i] <= consumer_if.write_data[j];
                                 controller_state[i] <= WRITE_WAITING;
 
                                 // Once we find a pending request, pick it up with this channel and stop looking for requests
@@ -79,17 +81,17 @@ module controller #(
                     end
                     READ_WAITING: begin
                         // Wait for response from memory for pending read request
-                        if (memory_if.read_ready[i]) begin 
-                            memory_if.read_valid[i] <= 0;
+                        if (mem_if.read_ready[i]) begin 
+                            mem_if.read_valid[i] <= 0;
                             consumer_if.read_ready[current_consumer[i]] <= 1;
-                            consumer_if.read_data[current_consumer[i]] <= memory_if.read_data[i];
+                            consumer_if.read_data[current_consumer[i]] <= mem_if.read_data[i];
                             controller_state[i] <= READ_RELAYING;
                         end
                     end
                     WRITE_WAITING: begin 
                         // Wait for response from memory for pending write request
-                        if (memory_if.write_ready[i]) begin 
-                            memory_if.write_valid[i] <= 0;
+                        if (mem_if.write_ready[i]) begin 
+                            mem_if.write_valid[i] <= 0;
                             consumer_if.write_ready[current_consumer[i]] <= 1;
                             controller_state[i] <= WRITE_RELAYING;
                         end

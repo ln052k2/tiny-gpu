@@ -5,7 +5,6 @@
 // > Handles asynchronous memory load and store operations and waits for response
 // > Each thread in each core has it's own LSU
 // > LDR, STR instructions are executed here
-
 module lsu (
     input wire clk,
     input wire reset,
@@ -23,14 +22,21 @@ module lsu (
     input logic [7:0] rt,
 
     // Data Memory
+    // output logic mem_read_valid,
+    // output logic [7:0] mem_read_address,
+    // input logic mem_read_ready,
+    // input logic [7:0] mem_read_data,
+    // output logic mem_write_valid,
+    // output logic [7:0] mem_write_address,
+    // output logic [7:0] mem_write_data,
+    // input logic mem_write_ready,
     mem_if.mem mem_if,
 
     // LSU Outputs
     output logic [1:0] lsu_state,
     output logic [7:0] lsu_out
 );
-
-import lsu_states_pkg::*;
+    localparam IDLE = 2'b00, REQUESTING = 2'b01, WAITING = 2'b10, DONE = 2'b11;
 
     always @(posedge clk) begin
         if (reset) begin
@@ -47,7 +53,7 @@ import lsu_states_pkg::*;
                 case (lsu_state)
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == core_states_pkg::REQUEST) begin 
+                        if (core_state == 3'b011) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -65,7 +71,7 @@ import lsu_states_pkg::*;
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == core_states_pkg::UPDATE) begin 
+                        if (core_state == 3'b110) begin 
                             lsu_state <= IDLE;
                         end
                     end
@@ -77,7 +83,7 @@ import lsu_states_pkg::*;
                 case (lsu_state)
                     IDLE: begin
                         // Only read when core_state = REQUEST
-                        if (core_state == core_states_pkg::REQUEST) begin 
+                        if (core_state == 3'b011) begin 
                             lsu_state <= REQUESTING;
                         end
                     end
@@ -95,7 +101,7 @@ import lsu_states_pkg::*;
                     end
                     DONE: begin 
                         // Reset when core_state = UPDATE
-                        if (core_state == core_states_pkg::UPDATE) begin 
+                        if (core_state == 3'b110) begin 
                             lsu_state <= IDLE;
                         end
                     end

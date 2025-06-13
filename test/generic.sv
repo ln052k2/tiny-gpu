@@ -18,7 +18,6 @@ module test_generic;
     logic device_control_write_enable;
     logic [7:0] device_control_data;
 
-    // Clock
     initial clk = 0;
     always #5 clk = ~clk;
 

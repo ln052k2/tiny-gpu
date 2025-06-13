@@ -7,7 +7,7 @@
 //   the device control register before the start signal is triggered
 // > Has memory controllers to interface between external memory and its multiple cores
 // > Configurable number of cores and thread capacity per core
-module gpu #(
+module gpu_baseline #(
     parameter DATA_MEM_ADDR_BITS = 8,        // Number of bits in data memory address (256 rows)
     parameter DATA_MEM_DATA_BITS = 8,        // Number of bits in data memory value (8 bit data)
     parameter DATA_MEM_NUM_CHANNELS = 4,     // Number of concurrent channels for sending requests to data memory
@@ -42,7 +42,7 @@ module gpu #(
     logic [7:0] core_block_id [NUM_CORES-1:0];
     logic [$clog2(THREADS_PER_BLOCK):0] core_thread_count [NUM_CORES-1:0];
 
-    // LSU <> Global Data Cache
+    // LSU <> Data Memory Controller Channels
     localparam NUM_LSUS = NUM_CORES * THREADS_PER_BLOCK;
     mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
@@ -50,7 +50,7 @@ module gpu #(
         .CHANNELS(NUM_LSUS)
     ) lsu_if();
 
-    //Local Instruction Cache <> Program Memory Controller Channels
+    // Fetcher <> Program Memory Controller Channels
     // Interface encompasses all cores 
     localparam NUM_FETCHERS = NUM_CORES;
     mem_if #(
@@ -95,7 +95,7 @@ module gpu #(
         .reset(reset),
 
         .consumer_if(fetcher_if),
-        .memory_if(program_mem_if)
+        .mem_if(program_mem_if)
     );
 
     // Dispatcher
@@ -126,13 +126,6 @@ module gpu #(
                 .DATA_BITS(DATA_MEM_DATA_BITS),
                 .CHANNELS(THREADS_PER_BLOCK)
             ) core_lsu_if();
-            
-            // Fetcher <> Local Instruction Cache
-            mem_if #(
-                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-                .CHANNELS(1)
-            ) icache_if();
 
             mem_if #(
                 .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -140,16 +133,6 @@ module gpu #(
                 .CHANNELS(1)
             ) core_fetcher_if();
 
-            cache #(
-                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-                .DATA_BITS(PROGRAM_MEM_ADDR_BITS),
-                .CONSUMERS(1)
-            ) icache (
-                .clk(clk),
-                .reset(reset),
-                .consumer_if(icache_if),
-                .memory_if(core_fetcher_if)
-            );
             // Pass through signals between LSUs and data memory controller
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
@@ -157,19 +140,11 @@ module gpu #(
                 always_ff @(posedge clk) begin 
                     lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
                     lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
-                    lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
-                    lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
 
                     lsu_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
                     lsu_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
                     lsu_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
-                    lsu_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
-                    lsu_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
-                    lsu_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
                     
-                    core_lsu_if.read_ready[j] <= lsu_if.read_ready[lsu_index];
-                    core_lsu_if.read_data[j] <= lsu_if.read_data[lsu_index];
-                    core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
                     core_lsu_if.read_ready[j] <= lsu_if.read_ready[lsu_index];
                     core_lsu_if.read_data[j] <= lsu_if.read_data[lsu_index];
                     core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
@@ -205,7 +180,7 @@ module gpu #(
                 .block_id(core_block_id[i]),
                 .thread_count(core_thread_count[i]),
 
-                .program_mem_if(icache_if),                
+                .program_mem_if(core_fetcher_if),                
                 .data_mem_if(core_lsu_if)
             );
         end

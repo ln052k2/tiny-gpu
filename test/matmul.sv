@@ -3,7 +3,8 @@
 `timescale 1ns/1ns
 
 module test_matmul;
-    localparam DATA_MEM_ADDR_BITS     = 8;
+
+   localparam DATA_MEM_ADDR_BITS     = 8;
     localparam DATA_MEM_DATA_BITS     = 8;
     localparam PROGRAM_MEM_ADDR_BITS  = 8;
     localparam PROGRAM_MEM_DATA_BITS  = 16;

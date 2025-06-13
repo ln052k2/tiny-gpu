@@ -1,29 +1,54 @@
 module cache #(
     parameter ADDR_BITS = 8,
     parameter DATA_BITS = 8,
-    parameter CHANNELS = 4,
-    parameter CACHE_LINES = 16
+    parameter CONSUMERS = 4,
+    parameter SETS = 4,
+    parameter WAYS = 4,
+    parameter WORDS_PER_LINE = 1,
+    parameter ARBITRATOR = "rr",
+    parameter REPLACEMENT_POLICY = "rr",
+    parameter WRITE_THROUGH_POLICY = 0, // default - write-back
+    parameter WRITE_ALLOCATE_POLICY = 0
 )(
     input wire clk,
     input wire reset,
 
-    // From LSU
-    mem_if.consumer cache_if, // CHANNELS=4
+    mem_if.consumer consumer_if,
 
     // To Global Memory
-    mem_if.mem data_mem_if
+    mem_if.mem memory_if
 );
+int i;
+always_ff @(posedge clk)
+    for(i=0; i<CONSUMERS; i++) begin
+        memory_if.read_address[0] <= consumer_if.read_address[i];
+        memory_if.write_address[0] <= consumer_if.write_address[i];
+        memory_if.write_data[0] <= consumer_if.write_data[i];
+        memory_if.write_valid[0] <= consumer_if.write_valid[i];
+        memory_if.read_valid[0] <= consumer_if.read_valid[i];
+        consumer_if.read_ready[i] <= memory_if.read_ready[0];
+        consumer_if.read_data[i] <= memory_if.read_data[0];
+        consumer_if.write_ready[i] <= memory_if.write_ready[0];
+    end
+endmodule
+`ifdef notdef
 
-localparam LINE_INDEX_BITS = $clog2(CACHE_LINES);
-localparam TAG_BITS = ADDR_BITS - LINE_INDEX_BITS;
+import cache_state_pkg::*;
+
+localparam OFFSET_BITS = $clog2(WORDS_PER_LINE);
+localparam SET_BITS = $clog2(SETS);
+localparam TAG_BITS = ADDR_BITS - SET_BITS - OFFSET_BITS;
+localparam CACHE_LINES = SETS * WAYS;
 
 typedef struct packed {
-    logic valid;
+    bit valid;
+    bit dirty;
     logic [TAG_BITS-1:0] tag;
     logic [DATA_BITS-1:0] data;
 } cache_line_t;
 
-cache_line_t cache_mem[CACHE_LINES];
+// create the actual cache store
+cache_line_t cache [SETS][WAYS];
 
 // Fix #2: Request buffering - track pending requests per channel
 typedef struct packed {
@@ -101,6 +126,7 @@ end
 
 // Main cache logic
 always_ff @(posedge clk or posedge reset) begin
+    $display("%s", state);
     if (reset) begin
         // Reset cache
         for (int i = 0; i < CACHE_LINES; i++) begin
@@ -236,5 +262,8 @@ always_ff @(posedge clk or posedge reset) begin
         end
     end
 end
+
+
+
 
 endmodule

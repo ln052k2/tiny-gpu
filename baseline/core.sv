@@ -42,7 +42,6 @@ module core #(
     logic [1:0] lsu_state[THREADS_PER_BLOCK-1:0];
     logic [7:0] lsu_out[THREADS_PER_BLOCK-1:0];
     wire [7:0] alu_out[THREADS_PER_BLOCK-1:0];
-    logic alu_busy[THREADS_PER_BLOCK-1:0];
     
     // Decoded Instruction Signals
     logic [3:0] decoded_rd_address;
@@ -112,7 +111,6 @@ module core #(
         .decoded_mem_write_enable(decoded_mem_write_enable),
         .decoded_ret(decoded_ret),
         .lsu_state(lsu_state),
-        .alu_busy(alu_busy),
         .current_pc(current_pc),
         .next_pc(next_pc),
         .done(done)
@@ -132,8 +130,7 @@ module core #(
                 .decoded_alu_output_mux(decoded_alu_output_mux),
                 .rs(rs[i]),
                 .rt(rt[i]),
-                .alu_out(alu_out[i]),
-                .alu_busy(alu_busy[i])
+                .alu_out(alu_out[i])
             );
 
             // LSU

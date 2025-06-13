@@ -4,7 +4,6 @@
 // INSTRUCTION DECODER
 // > Decodes an instruction into the control signals necessary to execute it
 // > Each core has it's own decoder
-
 module decoder (
     input wire clk,
     input wire reset,
@@ -32,7 +31,18 @@ module decoder (
     // Return (finished executing thread)
     output logic decoded_ret
 );
-    import opcodes_pkg::*;
+    localparam NOP = 4'b0000,
+        BRnzp = 4'b0001,
+        CMP = 4'b0010,
+        ADD = 4'b0011,
+        SUB = 4'b0100,
+        MUL = 4'b0101,
+        DIV = 4'b0110,
+        LDR = 4'b0111,
+        STR = 4'b1000,
+        CONST = 4'b1001,
+        RET = 4'b1111;
+
     always @(posedge clk) begin 
         if (reset) begin 
             decoded_rd_address <= 0;
@@ -51,7 +61,7 @@ module decoder (
             decoded_ret <= 0;
         end else begin 
             // Decode when core_state = DECODE
-            if (core_state == core_states_pkg::DECODE) begin 
+            if (core_state == 3'b010) begin 
                 // Get instruction signals from instruction every time
                 decoded_rd_address <= instruction[11:8];
                 decoded_rs_address <= instruction[7:4];
