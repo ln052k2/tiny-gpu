@@ -1,4 +1,6 @@
 src/alu.sv
+src/alu_components/divider.sv
+src/assertions/divider_assertions.sv
 src/controller.sv
 src/core.sv
 src/cache.sv
