@@ -71,21 +71,12 @@ module gpu #(
     logic [NUM_FETCHERS-1:0] fetcher_read_ready;
     logic [PROGRAM_MEM_DATA_BITS-1:0] fetcher_read_data [NUM_FETCHERS-1:0];
 
-    // // Internal signals between compute cores and cache
-    // logic [NUM_CORES-1:0] core_lsu_req;
-    // logic [NUM_CORES-1:0] core_lsu_we;
-    // logic [NUM_CORES-1:0][ADDR_WIDTH-1:0] core_lsu_addr;
-    // logic [NUM_CORES-1:0][DATA_WIDTH-1:0] core_lsu_wdata;
-    // logic [NUM_CORES-1:0][DATA_WIDTH-1:0] core_lsu_rdata;
-    // logic [NUM_CORES-1:0] core_lsu_hit;
-    // logic [NUM_CORES-1:0] core_lsu_ready;
-    
     // Signals between cache and memory controller
     logic cache_mem_req;
     logic cache_mem_we;
-    logic [ADDR_WIDTH-1:0] cache_mem_addr;
-    logic [DATA_WIDTH-1:0] cache_mem_wdata;
-    logic [DATA_WIDTH-1:0] cache_mem_rdata;
+    logic [DATA_MEM_ADDR_BITS-1:0] cache_mem_addr;
+    logic [DATA_MEM_DATA_BITS-1:0] cache_mem_wdata;
+    logic [DATA_MEM_DATA_BITS-1:0] cache_mem_rdata;
     logic cache_mem_ready;
     
     // Device Control Register
