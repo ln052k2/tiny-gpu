@@ -6,6 +6,9 @@ To compile the project:
 To run a testbench:
 ```vsim -c <tb_name> -L gpu -L base -do "run -all"```
 
+To run all tests:
+```./runtests.sh```
+
 The possible options for ```<tb_name>`` are:
 * test_matmul: ported from the original Python version, matrix multiplication kernel with known results
 * test_matadd: ported from the original Python version, matrix addition kernel with known results
