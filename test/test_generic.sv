@@ -90,11 +90,19 @@ module test_generic;
         .device_control_write_enable(device_control_write_enable),
         .device_control_data(device_control_data),
 
-        // Program memory hookup via interface
-        .program_mem_if(program_mem_if),
+        .program_mem_read_valid(program_mem_if.read_valid),
+        .program_mem_read_address(program_mem_if.read_address),
+        .program_mem_read_ready(program_mem_if.read_ready),
+        .program_mem_read_data(program_mem_if.read_data),
 
-        // Data memory hookup via interface
-        .data_mem_if(data_mem_if)
+        .data_mem_read_valid(data_mem_if.read_valid),
+        .data_mem_read_address(data_mem_if.read_address),
+        .data_mem_read_ready(data_mem_if.read_ready),
+        .data_mem_read_data(data_mem_if.read_data),
+        .data_mem_write_valid(data_mem_if.write_valid),
+        .data_mem_write_address(data_mem_if.write_address),
+        .data_mem_write_data(data_mem_if.write_data),
+        .data_mem_write_ready(data_mem_if.write_ready)
     );
 
     // Debug hooks
