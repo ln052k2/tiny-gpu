@@ -71,14 +71,6 @@ module gpu #(
     logic [NUM_FETCHERS-1:0] fetcher_read_ready;
     logic [PROGRAM_MEM_DATA_BITS-1:0] fetcher_read_data [NUM_FETCHERS-1:0];
 
-    // Signals between cache and memory controller
-    logic cache_mem_req;
-    logic cache_mem_we;
-    logic [DATA_MEM_ADDR_BITS-1:0] cache_mem_addr;
-    logic [DATA_MEM_DATA_BITS-1:0] cache_mem_wdata;
-    logic [DATA_MEM_DATA_BITS-1:0] cache_mem_rdata;
-    logic cache_mem_ready;
-    
     // Device Control Register
     dcr dcr_instance (
         .clk(clk),

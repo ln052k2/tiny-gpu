@@ -1,5 +1,6 @@
 `include "helpers/memory.sv"
 // `include "helpers/setup.sv"
+`timescale 1ns/1ns
 
 module test_matadd;
     localparam DATA_MEM_ADDR_BITS     = 8;
@@ -25,19 +26,18 @@ module test_matadd;
     always #5 clk = ~clk;
 
     // Instantiate memory interfaces
-    virtual mem_if #(
+    mem_if #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
         .CHANNELS(PROGRAM_MEM_CHANNELS)
-    ) program_mem_if;
+    ) program_mem_if();
 
-    virtual mem_if #(
+    mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
         .CHANNELS(DATA_MEM_CHANNELS)
-    ) data_mem_if;
-
-
+    ) data_mem_if();
+    
     // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -108,35 +108,27 @@ module test_matadd;
         .data_mem_write_ready(data_mem_if.write_ready)
     );
 
+
+    always @(posedge clk) begin
+ 	$display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
+    	$display("T=%0t | reset=%b start=%b done=%b | ctrl_we=%b ctrl_data=%0d", 
+              $time, reset, start, done, device_control_write_enable, device_control_data);
+    end
+
     initial begin
         cycles = 0;
         // Setup and reset
-        reset = 0;
-        @(posedge clk);
         reset = 1;
+        @(posedge clk);
+        reset = 0;
 
         // // Construct memories
         // program_memory = new("program");
         // data_memory    = new("data");
 
         // Hook interface signals to class instances
-        program_memory = new("program",
-            program_mem_read_valid,
-            program_mem_read_address,
-            program_mem_read_ready,
-            program_mem_read_data
-        );
-
-        data_memory = new("data",
-            data_mem_read_valid,
-            data_mem_read_address,
-            data_mem_read_ready,
-            data_mem_read_data,
-            data_mem_write_valid,
-            data_mem_write_address,
-            data_mem_write_data,
-            data_mem_write_ready
-        );
+        program_memory = new("program", program_mem_if);
+        data_memory = new("data", data_mem_if);
 
         // Load program and data memory
         program_memory.load(prog);
