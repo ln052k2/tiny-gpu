@@ -4,20 +4,14 @@ To compile the project:
 
 ### Testbenches
 To run a testbench:
-```vsim -c <tb_name> -L gpu -do "run -all"```
+```vsim -c <tb_name> -L gpu -L base -do "run -all"```
 
 The possible options for ```<tb_name>`` are:
 * test_matmul: ported from the original Python version, matrix multiplication kernel with known results
 * test_matadd: ported from the original Python version, matrix addition kernel with known results
 * test_generic: randomly generates instructions, prints a coverage report
 * test_cache: isolated testing for the cache, directed testing with specific test cases
-
-test_generic
-test_arbiter
-test_divider
-test_compare
-test_matadd
-test_matmul
+* test_arbiter: isolated testing for the arbiter
 
 # tiny-gpu
 
