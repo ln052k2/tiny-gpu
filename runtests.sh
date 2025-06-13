@@ -1,3 +1,4 @@
-for file in tests/*.sv; do
-  vsim -c `basename $file` -L gpu -L base -do "run -all"
+#!/bin/bash
+for file in test/*.sv; do
+  vsim -c `basename $file .sv` -L gpu -L base -do "run -all"
 done
