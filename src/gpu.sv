@@ -42,7 +42,7 @@ module gpu #(
     logic [7:0] core_block_id [NUM_CORES-1:0];
     logic [$clog2(THREADS_PER_BLOCK):0] core_thread_count [NUM_CORES-1:0];
 
-    // LSU <> Data Memory Controller Channels
+    // LSU <> Global Data Cache
     localparam NUM_LSUS = NUM_CORES * THREADS_PER_BLOCK;
     mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
@@ -50,7 +50,7 @@ module gpu #(
         .CHANNELS(NUM_LSUS)
     ) lsu_if();
 
-    // Fetcher <> Program Memory Controller Channels
+    //Local Instruction Cache <> Program Memory Controller Channels
     // Interface encompasses all cores 
     localparam NUM_FETCHERS = NUM_CORES;
     mem_if #(
@@ -69,23 +69,23 @@ module gpu #(
         .thread_count(thread_count)
     );
 
-    // Global cache services all cores
+    //Data Cache <> Memory
     mem_if #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(THREADS_PER_BLOCK)
-    ) global_cache_if();
+        .CHANNELS(1)
+    ) global_data_cache_if();
 
     cache #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
         .CHANNELS(NUM_LSUS),
         .CACHE_LINES(64)
-    ) global_cache (
+    ) global_data_cache (
         .clk(clk),
         .reset(reset),
-        .cache_if(global_cache_if),
-        .data_mem_if(data_mem_if)
+        .consumer_if(lsu_if),
+        .memory_if(global_data_cache_if)
     );
     
     // Data Memory Controller
@@ -98,8 +98,8 @@ module gpu #(
         .clk(clk),
         .reset(reset),
 
-        .consumer_if(global_cache_if),
-        .mem_if(data_mem_if)
+        .consumer_if(global_data_cache_if),
+        .memory_if(data_mem_if)
     );
 
     // Program Memory Controller
@@ -114,7 +114,7 @@ module gpu #(
         .reset(reset),
 
         .consumer_if(fetcher_if),
-        .mem_if(program_mem_if)
+        .memory_if(program_mem_if)
     );
 
     // Dispatcher
@@ -145,6 +145,13 @@ module gpu #(
                 .DATA_BITS(DATA_MEM_DATA_BITS),
                 .CHANNELS(THREADS_PER_BLOCK)
             ) core_lsu_if();
+            
+            // Fetcher <> Local Instruction Cache
+            mem_if #(
+                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+                .DATA_BITS(PROGRAM_MEM_DATA_BITS),
+                .CHANNELS(1)
+            ) icache_if();
 
             mem_if #(
                 .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -152,21 +159,32 @@ module gpu #(
                 .CHANNELS(1)
             ) core_fetcher_if();
 
+            cache #(
+                .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
+                .DATA_BITS(PROGRAM_MEM_ADDR_BITS),
+                .CHANNELS(1),
+                .CACHE_LINES(64)
+            ) icache (
+                .clk(clk),
+                .reset(reset),
+                .consumer_if(icache_if),
+                .memory_if(core_fetcher_if)
+            );
             // Pass through signals between LSUs and data memory controller
             genvar j;
             for (j = 0; j < THREADS_PER_BLOCK; j = j + 1) begin
                 localparam lsu_index = i * THREADS_PER_BLOCK + j;
                 always_ff @(posedge clk) begin 
-                    global_cache_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
-                    global_cache_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
+                    lsu_if.read_valid[lsu_index] <= core_lsu_if.read_valid[j];
+                    lsu_if.read_address[lsu_index] <= core_lsu_if.read_address[j];
 
-                    global_cache_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
-                    global_cache_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
-                    global_cache_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
+                    lsu_if.write_valid[lsu_index] <= core_lsu_if.write_valid[j];
+                    lsu_if.write_address[lsu_index] <= core_lsu_if.write_address[j];
+                    lsu_if.write_data[lsu_index] <= core_lsu_if.write_data[j];
                     
-                    core_lsu_if.read_ready[j] <= global_cache_if.read_ready[lsu_index];
-                    core_lsu_if.read_data[j] <= global_cache_if.read_data[lsu_index];
-                    core_lsu_if.write_ready[j] <= global_cache_if.write_ready[lsu_index];
+                    core_lsu_if.read_ready[j] <= lsu_if.read_ready[lsu_index];
+                    core_lsu_if.read_data[j] <= lsu_if.read_data[lsu_index];
+                    core_lsu_if.write_ready[j] <= lsu_if.write_ready[lsu_index];
                 end
             end
             
@@ -199,7 +217,7 @@ module gpu #(
                 .block_id(core_block_id[i]),
                 .thread_count(core_thread_count[i]),
 
-                .program_mem_if(core_fetcher_if),                
+                .program_mem_if(icache_if),                
                 .data_mem_if(core_lsu_if)
             );
         end

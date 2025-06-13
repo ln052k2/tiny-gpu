@@ -1,5 +1,6 @@
-src/pkg/alu_ops_pkg.sv
+grc/pkg/alu_ops_pkg.sv
 src/pkg/alu_state_pkg.sv
+src/pkg/cache_state_pkg.sv
 src/pkg/controller_states_pkg.sv
 src/pkg/core_states_pkg.sv
 src/pkg/fetcher_states_pkg.sv
@@ -12,7 +13,8 @@ src/alu_components/divider.sv
 src/controller.sv
 src/core.sv
 src/cache.sv
-src/cache_components/round_robin.sv
+src/cache_components/replacement/rrr.sv
+src/cache_components/arbiters/rra.sv
 src/dcr.sv
 src/decoder.sv
 src/dispatch.sv

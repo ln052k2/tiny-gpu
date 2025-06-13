@@ -19,7 +19,7 @@ module controller #(
     // Consumer Interface (Fetchers / LSUs)
     mem_if.consumer consumer_if,
     // Memory Interface (Data / Program)
-    mem_if.mem mem_if
+    mem_if.mem memory_if
 );
 
     import controller_states_pkg::*;
@@ -31,12 +31,12 @@ module controller #(
 
     always @(posedge clk) begin
         if (reset) begin 
-            mem_if.read_valid <= 1'b0;
-            mem_if.read_address <= '{default: '0};
+            memory_if.read_valid <= 1'b0;
+            memory_if.read_address <= '{default: '0};
 
-            mem_if.write_valid <= 1'b0;
-            mem_if.write_address <= '{default: '0};
-            mem_if.write_data <= '{default: '0};
+            memory_if.write_valid <= 1'b0;
+            memory_if.write_address <= '{default: '0};
+            memory_if.write_data <= '{default: '0};
 
             consumer_if.read_ready <= 1'b0;
             consumer_if.read_data <= '{default: '0};
@@ -57,8 +57,8 @@ module controller #(
                                 channel_serving_consumer[j] = 1;
                                 current_consumer[i] <= j;
 
-                                mem_if.read_valid[i] <= 1;
-                                mem_if.read_address[i] <= consumer_if.read_address[j];
+                                memory_if.read_valid[i] <= 1;
+                                memory_if.read_address[i] <= consumer_if.read_address[j];
                                 controller_state[i] <= READ_WAITING;
 
                                 // Once we find a pending request, pick it up with this channel and stop looking for requests
@@ -67,9 +67,9 @@ module controller #(
                                 channel_serving_consumer[j] = 1;
                                 current_consumer[i] <= j;
 
-                                mem_if.write_valid[i] <= 1;
-                                mem_if.write_address[i] <= consumer_if.write_address[j];
-                                mem_if.write_data[i] <= consumer_if.write_data[j];
+                                memory_if.write_valid[i] <= 1;
+                                memory_if.write_address[i] <= consumer_if.write_address[j];
+                                memory_if.write_data[i] <= consumer_if.write_data[j];
                                 controller_state[i] <= WRITE_WAITING;
 
                                 // Once we find a pending request, pick it up with this channel and stop looking for requests
@@ -79,17 +79,17 @@ module controller #(
                     end
                     READ_WAITING: begin
                         // Wait for response from memory for pending read request
-                        if (mem_if.read_ready[i]) begin 
-                            mem_if.read_valid[i] <= 0;
+                        if (memory_if.read_ready[i]) begin 
+                            memory_if.read_valid[i] <= 0;
                             consumer_if.read_ready[current_consumer[i]] <= 1;
-                            consumer_if.read_data[current_consumer[i]] <= mem_if.read_data[i];
+                            consumer_if.read_data[current_consumer[i]] <= memory_if.read_data[i];
                             controller_state[i] <= READ_RELAYING;
                         end
                     end
                     WRITE_WAITING: begin 
                         // Wait for response from memory for pending write request
-                        if (mem_if.write_ready[i]) begin 
-                            mem_if.write_valid[i] <= 0;
+                        if (memory_if.write_ready[i]) begin 
+                            memory_if.write_valid[i] <= 0;
                             consumer_if.write_ready[current_consumer[i]] <= 1;
                             controller_state[i] <= WRITE_RELAYING;
                         end
