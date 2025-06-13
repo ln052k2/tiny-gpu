@@ -220,7 +220,6 @@ module cache #(
             victim_data <= 0;
             
         end else begin
-            $display("runnin %p", state);
             // Handle cache flush
             if (cache_flush) begin
                 for (int i = 0; i < CACHE_SIZE; i++) begin

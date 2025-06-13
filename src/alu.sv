@@ -6,6 +6,7 @@
 // > In this minimal implementation, the ALU supports the 4 basic arithmetic operations
 // > Each thread in each core has it's own ALU
 // > ADD, SUB, MUL, DIV instructions are all executed here
+
 module alu (
     input wire clk,
     input wire reset,
@@ -18,22 +19,46 @@ module alu (
 
     input logic [7:0] rs,
     input logic [7:0] rt,
-    output wire [7:0] alu_out
+    output wire [7:0] alu_out,
+
+    // division is now multi step
+    output wire alu_busy
 );
-    localparam ADD = 2'b00,
-        SUB = 2'b01,
-        MUL = 2'b10,
-        DIV = 2'b11;
+    import alu_ops_pkg::*;
+    import alu_state_pkg::*;
+    
 
     logic [7:0] alu_out_reg;
     assign alu_out = alu_out_reg;
 
+    // if we're in a multi step operation, set busy flag
+    alu_state_t alu_state;
+    assign alu_busy = (alu_state !== IDLE && alu_state !== DONE) || (alu_state == IDLE && decoded_alu_arithmetic_mux == DIV);
+
+    // instantiate divider unit
+    logic div_start;
+    wire [7:0] div_result;
+    wire div_done;
+    divider #(8) divider_unit(.clk(clk), .reset(reset), .start(div_start), .dividend(rs), .divisor(rt), .result(div_result), .done(div_done));
+    // bind assertions model, if we should
+    `ifndef SILENT
+        bind divider_unit divider_assertions divider_assertions_unit(.*);
+    `endif
+
     always @(posedge clk) begin 
+        if (alu_state == DONE)
+            alu_state <= IDLE;
         if (reset) begin 
             alu_out_reg <= 8'b0;
+            alu_state <= IDLE;
         end else if (enable) begin
-            // Calculate alu_out when core_state = EXECUTE
-            if (core_state == 3'b101) begin 
+            div_start <= 'b0;
+            if (alu_state == WAIT_DIV) begin
+                if (div_done) begin
+                    alu_out_reg <= div_result;
+                    alu_state <= DONE;
+                end
+            end else if (core_state == core_states_pkg::EXECUTE) begin 
                 if (decoded_alu_output_mux == 1) begin 
                     // Set values to compare with NZP register in alu_out[2:0]
                     alu_out_reg <= {5'b0, (rs - rt > 0), (rs - rt == 0), (rs - rt < 0)};
@@ -50,7 +75,8 @@ module alu (
                             alu_out_reg <= rs * rt;
                         end
                         DIV: begin 
-                            alu_out_reg <= rs / rt;
+                            div_start <= 1;
+                            alu_state <= WAIT_DIV;
                         end
                     endcase
                 end
