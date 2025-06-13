@@ -143,35 +143,16 @@ module cache #(
         endcase
     end
     
-    // LSU arbitration (round-robin within this core)
-    always_ff @(posedge clk) begin
-        if (reset) begin
-            serving_lsu <= 0;
-        end else if (state == IDLE) begin
-            serving_lsu <= next_serving_lsu;
-        end
-    end
-    
-    // Find next LSU to serve
-    always_comb begin
-        next_serving_lsu = serving_lsu;
-        
-        // Round-robin through this core's LSUs
-        for (int i = 1; i <= THREADS_PER_BLOCK; i++) begin
-            logic [$clog2(THREADS_PER_BLOCK)-1:0] candidate;
-            candidate = (serving_lsu + i) % THREADS_PER_BLOCK;
-            if (lsu_read_valid[candidate] || lsu_write_valid[candidate]) begin
-                next_serving_lsu = candidate;
-                break;
-            end
-        end
-        
-        // If current LSU still has request, serve it
-        if (lsu_read_valid[serving_lsu] || lsu_write_valid[serving_lsu]) begin
-            next_serving_lsu = serving_lsu;
-        end
-    end
-    
+
+    round_robin_arbiter #(.N(THREADS_PER_BLOCK)) rra(
+        // request vector found by taking or
+        .requests(lsu_read_valid|lsu_write_valid),
+        .grant(serving_lsu), 
+        .active(state==IDLE),
+        .clk(clk), 
+        .reset(reset)
+    );
+
     // Capture current request details
     always_ff @(posedge clk) begin
         if (reset) begin
