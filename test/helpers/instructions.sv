@@ -117,19 +117,19 @@ class InstrCoverage;
         }
 
         // Cross coverage for opcode and destination register
-        opcode_rd_cross: cross f.opcode, f.rd {
+        opcode_rd_cross: cross f_opcode, f_rd {
             // Only track cross coverage for opcodes that use rd
             ignore_bins ignore_no_rd = binsof(f_opcode) intersect {4'b0000, 4'b0001, 4'b0010, 4'b1000, 4'b1111};
         }
         
         // Cross coverage for opcode and source register
-        opcode_rs_cross: cross f.opcode, f.rs {
+        opcode_rs_cross: cross f_opcode, f_rs {
             // Only track cross coverage for opcodes that use rs
             ignore_bins ignore_no_rs = binsof(f_opcode) intersect {4'b0000, 4'b1001, 4'b1111};
         }
         
         // Cross coverage for opcode and immediate values
-        opcode_imm_cross: cross f.opcode, f.imm8 {
+        opcode_imm_cross: cross f_opcode, f_imm8 {
             // Only track for opcodes that actually use immediate values
             ignore_bins ignore_non_imm = binsof(f_opcode) intersect {
                 4'b0000, 4'b0010, 4'b0011, 4'b0100, 4'b0101, 4'b0110, 4'b0111, 4'b1000, 4'b1111
@@ -137,7 +137,7 @@ class InstrCoverage;
         }
         
         // Cross coverage for branch opcodes and NZP flags
-        opcode_nzp_cross: cross f.opcode, f.nzp {
+        opcode_nzp_cross: cross f_opcode, f_nzp {
             // Only track for branch instructions
             ignore_bins ignore_non_branch = binsof(f_opcode) intersect {
                 4'b0000, 4'b0010, 4'b0011, 4'b0100, 4'b0101, 4'b0110, 4'b0111, 4'b1000, 4'b1001, 4'b1111
