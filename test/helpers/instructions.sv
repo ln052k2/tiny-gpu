@@ -13,6 +13,18 @@ class instr_fields_t;
         opcode inside {4'b0000, 4'b0001, 4'b0010, 4'b0011, 4'b0100, 4'b0101, 
                        4'b0110, 4'b0111, 4'b1000, 4'b1001, 4'b1111};
     }
+    
+    // Simulate "realistic" program
+    constraint opcode_c {
+    opcode dist {
+        4'b0011 := 20,
+        4'b0100 := 20,
+        4'b0111 := 15,
+        4'b1000 := 15,
+        [4'b0000:4'b0010] := 5,
+        4'b1111 := 1
+    };
+    }
 
     // Encode instruction fields into 16-bit instruction
     function logic [15:0] encode();
@@ -100,19 +112,6 @@ class InstrCoverage;
             bins load_store_seq = (4'b0111 => 4'b1000); // LDR followed by STR
             bins arith_seq = (4'b0011, 4'b0100, 4'b0101, 4'b0110 => 4'b0010); // Math then CMP
         }
-
-        // Simulate "realistic" program
-        constraint opcode_c {
-        opcode dist {
-            4'b0011 := 20,
-            4'b0100 := 20,
-            4'b0111 := 15,
-            4'b1000 := 15,
-            [4'b0000:4'b0010] := 5,
-            4'b1111 := 1
-        };
-    }
-
 
     endgroup
 
