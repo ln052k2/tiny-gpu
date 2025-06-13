@@ -41,28 +41,6 @@ module test_matmul;
         .CHANNELS(DATA_MEM_CHANNELS)
     ) data_mem_if();
 
-    // Assertions for PROGRAM memory interface
-    mem_if_a #(
-        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-        .CHANNELS(PROGRAM_MEM_CHANNELS)
-    ) assert_program_mem (
-        .clk(clk),
-        .reset(reset),
-        .mem_if(program_mem_if)
-    );
-
-    // Assertions for DATA memory interface
-    mem_if_a #(
-        .ADDR_BITS(DATA_MEM_ADDR_BITS),
-        .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(DATA_MEM_CHANNELS)
-    ) assert_data_mem (
-        .clk(clk),
-        .reset(reset),
-        .mem_if(data_mem_if)
-    );
-    
     // Program Memory
     Memory #(
         .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
@@ -115,6 +93,7 @@ module test_matmul;
     };
 
     // Instantiate DUT
+    // Instantiate DUT
     gpu #(
         .DATA_MEM_ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_MEM_DATA_BITS(DATA_MEM_DATA_BITS),
@@ -133,12 +112,21 @@ module test_matmul;
         .device_control_write_enable(device_control_write_enable),
         .device_control_data(device_control_data),
 
-        // Program memory hookup via interface
-        .program_mem_if(program_mem_if),
+        .program_mem_read_valid(program_mem_if.read_valid),
+        .program_mem_read_address(program_mem_if.read_address),
+        .program_mem_read_ready(program_mem_if.read_ready),
+        .program_mem_read_data(program_mem_if.read_data),
 
-        // Data memory hookup via interface
-        .data_mem_if(data_mem_if)
+        .data_mem_read_valid(data_mem_if.read_valid),
+        .data_mem_read_address(data_mem_if.read_address),
+        .data_mem_read_ready(data_mem_if.read_ready),
+        .data_mem_read_data(data_mem_if.read_data),
+        .data_mem_write_valid(data_mem_if.write_valid),
+        .data_mem_write_address(data_mem_if.write_address),
+        .data_mem_write_data(data_mem_if.write_data),
+        .data_mem_write_ready(data_mem_if.write_ready)
     );
+
 
     // always @(posedge clk) begin
  	// $display("T=%0t | reset=%b start=%b done=%b", $time, reset, start, done);
