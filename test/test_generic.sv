@@ -40,11 +40,15 @@ module test_generic;
         .DATA_BITS(PROGRAM_MEM_DATA_BITS),
         .CHANNELS(PROGRAM_MEM_CHANNELS)
     ) program_memory;
+
     Memory #(
         .ADDR_BITS(DATA_MEM_ADDR_BITS),
         .DATA_BITS(DATA_MEM_DATA_BITS),
         .CHANNELS(DATA_MEM_CHANNELS)
     ) data_memory;
+
+    program_memory = new("program", program_mem_if);
+    data_memory    = new("data", data_mem_if);
 
     logic [15:0] prog [0:PROGRAM_LENGTH-1] = '{default:0};
     logic [DATA_MEM_DATA_BITS-1:0] data [0:15] = '{default: 0};
@@ -116,9 +120,6 @@ module test_generic;
         reset = 1;
         @(posedge clk);
         reset = 0;
-
-        program_memory = new("program", program_mem_if);
-        data_memory    = new("data", data_mem_if);
 
         program_memory.load(prog);
         data_memory.load(data);
