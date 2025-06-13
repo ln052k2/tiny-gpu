@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module cache_tb;
+module test_cache;
     // Test parameters - matching cache defaults
     parameter CACHE_SIZE = 16;
     parameter ADDR_BITS = 8;

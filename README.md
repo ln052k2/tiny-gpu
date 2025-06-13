@@ -1,3 +1,24 @@
+# ECE 571 ADDITIONS
+To compile the project:
+```make``
+
+### Testbenches
+To run a testbench:
+```vsim -c <tb_name> -L gpu -do "run -all"```
+
+The possible options for ```<tb_name>`` are:
+* test_matmul: ported from the original Python version, matrix multiplication kernel with known results
+* test_matadd: ported from the original Python version, matrix addition kernel with known results
+* test_generic: randomly generates instructions, prints a coverage report
+* test_cache: isolated testing for the cache, directed testing with specific test cases
+
+test_generic
+test_arbiter
+test_divider
+test_compare
+test_matadd
+test_matmul
+
 # tiny-gpu
 
 A minimal GPU implementation in Verilog optimized for learning about how GPUs work from the ground up.
