@@ -18,4 +18,4 @@ test/helpers/memory.sv
 
 test/test_matadd.sv
 test/test_matmul.sv
-
+test/test_cache.sv
