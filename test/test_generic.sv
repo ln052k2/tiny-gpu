@@ -35,20 +35,8 @@ module test_generic;
     ) data_mem_if();
 
     // Memories    
-    Memory #(
-        .ADDR_BITS(PROGRAM_MEM_ADDR_BITS),
-        .DATA_BITS(PROGRAM_MEM_DATA_BITS),
-        .CHANNELS(PROGRAM_MEM_CHANNELS)
-    ) program_memory;
-
-    Memory #(
-        .ADDR_BITS(DATA_MEM_ADDR_BITS),
-        .DATA_BITS(DATA_MEM_DATA_BITS),
-        .CHANNELS(DATA_MEM_CHANNELS)
-    ) data_memory;
-
-    program_memory = new("program", program_mem_if);
-    data_memory    = new("data", data_mem_if);
+    Memory program_memory;
+    Memory data_memory;
 
     logic [15:0] prog [0:PROGRAM_LENGTH-1] = '{default:0};
     logic [DATA_MEM_DATA_BITS-1:0] data [0:15] = '{default: 0};
@@ -102,6 +90,9 @@ module test_generic;
     InstrCoverage coverage;
 
     initial begin
+        program_memory = new("program", program_mem_if);
+        data_memory    = new("data", data_mem_if);
+        
         instr = new();
         coverage = new();
         // Fill program memory with randomized instructions
