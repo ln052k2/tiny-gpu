@@ -2,7 +2,7 @@
 // This cache is instantiated directly inside each core.sv
 // Sits between the core's LSUs and the data memory controller
 
-module core_l1_cache #(
+module cache #(
     parameter CACHE_SIZE = 16,              // Number of cache lines per core
     parameter ADDR_BITS = 8,                // Address width
     parameter DATA_BITS = 8,                // Data width

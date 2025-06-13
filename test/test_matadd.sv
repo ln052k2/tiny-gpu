@@ -151,7 +151,7 @@ module test_matadd;
         // Start DUT
         start = 1'b1;
         @(posedge clk);
-        start = 1'b0;
+        // start = 1'b0;
 
         while (done !== 1) begin
             program_memory.run();
